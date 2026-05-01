@@ -1,0 +1,18 @@
+# Binaries
+conduit
+*.exe
+
+# Build output
+dist/
+bin/
+
+# Go
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Dev only
+_dev/
