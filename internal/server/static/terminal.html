@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conduit</title>
+  <link rel="stylesheet" href="/static/xterm/css/xterm.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; background: #1e1e1e; }
+    #terminal { width: 100%; height: 100%; padding: 4px; }
+  </style>
+</head>
+<body>
+  <div id="terminal"></div>
+  <script src="/static/xterm/lib/xterm.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const host = params.get('host') || '';
+    const user = params.get('user') || '';
+
+    const term = new Terminal();
+    const ws = new WebSocket(`ws://${location.host}/ws?` + new URLSearchParams({ host, user }));
+    ws.binaryType = 'arraybuffer';
+
+    term.open(document.getElementById('terminal'));
+
+    ws.onmessage = e => term.write(new Uint8Array(e.data));
+    term.onData(data => ws.send(new TextEncoder().encode(data)));
+
+    ws.onclose = () => term.write('\r\n\x1b[31mConnection closed.\x1b[0m\r\n');
+    ws.onerror = () => term.write('\r\n\x1b[31mConnection error.\x1b[0m\r\n');
+  </script>
+</body>
+</html>
