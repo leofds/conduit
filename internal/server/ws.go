@@ -87,7 +87,7 @@ func runSSHSession(parentCtx context.Context, wsConn *websocket.Conn, addr, user
 
 	notify := func(format string, args ...any) {
 		msg := fmt.Sprintf("\r\n["+format+"]\r\n", args...)
-		wsConn.WriteMessage(websocket.TextMessage, []byte(msg)) //nolint:errcheck
+		wsConn.WriteMessage(websocket.BinaryMessage, []byte(msg)) //nolint:errcheck
 		cancel()
 	}
 
@@ -141,7 +141,22 @@ func runSSHSession(parentCtx context.Context, wsConn *websocket.Conn, addr, user
 		}
 		return answers, nil
 	})
-	sshCfg.Auth = []ssh.AuthMethod{ssh.RetryableAuthMethod(kbdInt, 3)}
+
+	// passwordPrompt prompts the user for a password through the terminal for ssh.Password auth.
+	passwordPrompt := func() (string, error) {
+		wsConn.WriteMessage(websocket.BinaryMessage, []byte("Password: ")) //nolint:errcheck
+		pass, err := readLine()
+		if err != nil {
+			return "", err
+		}
+		wsConn.WriteMessage(websocket.BinaryMessage, []byte("\r\n")) //nolint:errcheck
+		return pass, nil
+	}
+
+	sshCfg.Auth = []ssh.AuthMethod{
+		ssh.RetryableAuthMethod(kbdInt, 3),
+		ssh.RetryableAuthMethod(ssh.PasswordCallback(passwordPrompt), 3),
+	}
 
 	// Dial SSH
 	sshClient, err := ssh.Dial("tcp", addr, sshCfg)
