@@ -16,11 +16,16 @@
   <script src="/static/xterm/lib/xterm.js"></script>
   <script>
     const params = new URLSearchParams(location.search);
-    const host = params.get('host') || '';
-    const user = params.get('user') || '';
+    const method = params.get('method') || 'local';
+    const host   = params.get('host')   || '';
+    const user   = params.get('user')   || '';
+
+    const wsParams = new URLSearchParams({ method });
+    if (host) wsParams.set('host', host);
+    if (user) wsParams.set('user', user);
 
     const term = new Terminal();
-    const ws = new WebSocket(`ws://${location.host}/ws?` + new URLSearchParams({ host, user }));
+    const ws = new WebSocket(`ws://${location.host}/ws?` + wsParams);
     ws.binaryType = 'arraybuffer';
 
     term.open(document.getElementById('terminal'));

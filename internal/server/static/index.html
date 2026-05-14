@@ -49,8 +49,8 @@
  ╚██████╗╚██████╔╝██║ ╚████║██████╔╝╚██████╔╝██║   ██║
   ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═════╝  ╚═════╝ ╚═╝   ╚═╝</pre>
     </div>
-    <input id="host" type="text"  placeholder="Host"          autocomplete="off" required />
-    <input id="user" type="text"  placeholder="Username"      autocomplete="off" required />
+    <input id="host" type="text"  placeholder="Host (leave empty for local shell)" autocomplete="off" />
+    <input id="user" type="text"  placeholder="Username"      autocomplete="off" />
     <button type="submit">Connect</button>
   </form>
 
@@ -66,8 +66,18 @@
       e.preventDefault();
       const host = document.getElementById('host').value.trim();
       const user = document.getElementById('user').value.trim();
-      const params = new URLSearchParams({ host, user });
-      window.location.href = `/terminal?${params}`;
+
+      if (host) {
+        // SSH
+        if (!user) { alert('Username is required for SSH.'); return; }
+        const params = new URLSearchParams({ method: 'ssh', host, user });
+        window.location.href = `/terminal?${params}`;
+      } else {
+        // Local shell
+        const params = new URLSearchParams({ method: 'local' });
+        if (user) params.set('user', user);
+        window.location.href = `/terminal?${params}`;
+      }
     });
   </script>
 </body>

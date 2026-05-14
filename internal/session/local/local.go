@@ -1,0 +1,130 @@
+package local
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"time"
+
+	"github.com/creack/pty"
+	"github.com/gorilla/websocket"
+
+	"github.com/leofds/conduit/internal/session"
+)
+
+const idleTimeout = 10 * time.Minute
+
+type Runner struct {
+	user  string
+	shell string
+}
+
+func New(user, shell string) *Runner {
+	if shell == "" {
+		shell = os.Getenv("SHELL")
+		if shell == "" {
+			shell = "/bin/sh"
+		}
+	}
+	return &Runner{user: user, shell: shell}
+}
+
+func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
+	ctx, cancel := context.WithCancel(parentCtx)
+	defer cancel()
+
+	notify := func(format string, args ...any) {
+		msg := fmt.Sprintf("\r\n["+format+"]\r\n", args...)
+		log.Printf("%s", msg)
+		wsConn.WriteMessage(websocket.BinaryMessage, []byte(msg)) //nolint:errcheck
+		cancel()
+	}
+
+	// /bin/login requires root privileges
+	var cmd *exec.Cmd
+	if os.Getuid() == 0 {
+		cmd = exec.CommandContext(ctx, "/bin/login")
+	} else {
+		cmd = exec.CommandContext(ctx, "sudo", "-n", "/bin/login")
+	}
+	cmd.Env = append(os.Environ(), "TERM=xterm-256color")
+
+	ptmx, err := pty.Start(cmd)
+	if err != nil {
+		notify("PTY start failed: %v", err)
+		return
+	}
+	defer func() { _ = ptmx.Close() }()
+
+	// PTY output -> WebSocket
+	writer := &session.Writer{Conn: wsConn}
+	go func() {
+		buf := make([]byte, 4096)
+		for {
+			n, readErr := ptmx.Read(buf)
+			if n > 0 {
+				writer.Write(buf[:n]) //nolint:errcheck
+			}
+			if readErr != nil {
+				return
+			}
+		}
+	}()
+
+	// Process-exit watcher
+	go func() {
+		if err := cmd.Wait(); err != nil {
+			notify("session ended: %v", err)
+		} else {
+			notify("session ended")
+		}
+	}()
+
+	// Idle timer
+	idleTimer := time.NewTimer(idleTimeout)
+	defer idleTimer.Stop()
+	go func() {
+		select {
+		case <-idleTimer.C:
+			notify("session closed due to inactivity")
+		case <-ctx.Done():
+		}
+	}()
+
+	// Main loop: WebSocket -> PTY
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		msgType, data, err := wsConn.ReadMessage()
+		if err != nil {
+			return
+		}
+
+		if !idleTimer.Stop() {
+			select {
+			case <-idleTimer.C:
+			default:
+			}
+		}
+		idleTimer.Reset(idleTimeout)
+
+		if msgType == websocket.TextMessage {
+			var msg session.ResizeMsg
+			if err := json.Unmarshal(data, &msg); err == nil && msg.Type == "resize" {
+				pty.Setsize(ptmx, &pty.Winsize{Rows: uint16(msg.Rows), Cols: uint16(msg.Cols)}) //nolint:errcheck
+				continue
+			}
+		}
+
+		if _, err := ptmx.Write(data); err != nil {
+			return
+		}
+	}
+}
