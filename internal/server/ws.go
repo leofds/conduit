@@ -47,6 +47,17 @@ func (s *Server) wsHandler(c *gin.Context) {
 		return
 	}
 
+	// Clear the token cookie now that it has been consumed.
+	if token != "" {
+		http.SetCookie(c.Writer, &http.Cookie{
+			Name:     "conduit_token",
+			Value:    "",
+			Path:     "/",
+			MaxAge:   -1,
+			SameSite: http.SameSiteLaxMode,
+		})
+	}
+
 	var runner session.Runner
 	switch sess := cfg.(type) {
 	case resolver.SSHConfig:

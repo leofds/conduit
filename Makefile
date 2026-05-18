@@ -16,10 +16,14 @@ copy-configs:
 	@[ -f hosts.yaml ] && cp hosts.yaml dist/hosts.yaml || true
 	@[ -f conduit.yaml ] && cp conduit.yaml dist/conduit.yaml || true
 
+copy-mockapi-configs:
+	@[ -f hosts-mockapi.yaml ] && cp hosts-mockapi.yaml dist/hosts-mockapi.yaml || true
+	@[ -f conduit.yaml ] && cp conduit.yaml dist/conduit.yaml || true
+
 run: copy-configs
 	go run $(LDFLAGS) $(CMD)
 
-run-mockapi: copy-configs
+run-mockapi: copy-mockapi-configs
 	go run ./cmd/mockapi
 
 test:

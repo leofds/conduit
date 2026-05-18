@@ -43,9 +43,13 @@ type Resolver struct {
 }
 
 func New() (*Resolver, error) {
+	return NewFromPaths(configPaths)
+}
+
+func NewFromPaths(paths []string) (*Resolver, error) {
 	hosts := make(map[string]hostEntry)
 	var local *localEntry
-	for _, path := range configPaths {
+	for _, path := range paths {
 		data, err := os.ReadFile(path)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -66,7 +70,7 @@ func New() (*Resolver, error) {
 		log.Printf("fileresolver: loaded %d hosts from %s", len(f.Hosts), path)
 	}
 	if len(hosts) == 0 && local == nil {
-		log.Printf("fileresolver: warning: no config files found (looked in %v)", configPaths)
+		log.Printf("fileresolver: warning: no config files found (looked in %v)", paths)
 	}
 	return &Resolver{hosts: hosts, local: local}, nil
 }

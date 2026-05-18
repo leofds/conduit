@@ -2,10 +2,12 @@
 // endpoint with static responses. Use it to test the apiresolver without
 // needing a real backend.
 //
+// The listen address and endpoint path are read from conduit.yaml (api.url).
+//
 // Usage:
 //
-//	go run ./cmd/mockapi          # listens on :8080, endpoint /conduit/resolve
-//	go run ./cmd/mockapi -addr :9090 -endpoint /resolve
+//	make run-mockapi
+//	go run ./cmd/mockapi
 //
 // Point conduit.yaml at it:
 //
@@ -16,7 +18,6 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"log"
 	"net/http"
 	"net/url"
@@ -25,6 +26,13 @@ import (
 	"github.com/leofds/conduit/internal/resolver"
 	"github.com/leofds/conduit/internal/resolver/fileresolver"
 )
+
+var mockapiHostsPaths = []string{
+	"/etc/conduit/hosts-mockapi.yaml",
+	"/etc/conduit/hosts-mockapi.yml",
+	"./hosts-mockapi.yaml",
+	"./hosts-mockapi.yml",
+}
 
 // These structs mirror apiresolver's request/response bodies.
 type resolveRequest struct {
@@ -92,32 +100,31 @@ func makeHandler(fr *fileresolver.Resolver) http.HandlerFunc {
 }
 
 func main() {
-	// Derive defaults from conduit.yaml so mockapi mirrors the configured endpoint.
-	defaultAddr := ":8080"
-	defaultEndpoint := "/conduit/resolve"
-	if cfg, err := config.Load(); err == nil && cfg.API.URL != "" {
+	addr := ":8080"
+	endpoint := "/conduit/resolve"
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("mockapi: load config: %v", err)
+	}
+	if cfg.API.URL != "" {
 		if u, err := url.Parse(cfg.API.URL); err == nil {
 			if u.Port() != "" {
-				defaultAddr = ":" + u.Port()
+				addr = ":" + u.Port()
 			}
 			if u.Path != "" {
-				defaultEndpoint = u.Path
+				endpoint = u.Path
 			}
 		}
 	}
 
-	addr := flag.String("addr", defaultAddr, "listen address")
-	endpoint := flag.String("endpoint", defaultEndpoint, "resolver endpoint path")
-	flag.Parse()
-
-	fr, err := fileresolver.New()
+	fr, err := fileresolver.NewFromPaths(mockapiHostsPaths)
 	if err != nil {
 		log.Fatalf("mockapi: load hosts: %v", err)
 	}
 
-	http.HandleFunc(*endpoint, makeHandler(fr))
-	log.Printf("mockapi: listening on %s, endpoint %s", *addr, *endpoint)
-	if err := http.ListenAndServe(*addr, nil); err != nil {
+	http.HandleFunc(endpoint, makeHandler(fr))
+	log.Printf("mockapi: listening on %s, endpoint %s", addr, endpoint)
+	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatalf("mockapi: %v", err)
 	}
 }

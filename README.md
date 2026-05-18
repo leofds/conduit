@@ -8,49 +8,98 @@ The primary use case is providing interactive console access — to the local ma
 
 ## Build
 
-Requirements
-
-- Go 1.21+
-
 ```bash
-make build
+make build        # produces ./dist/conduit
 ```
-
-The binary is written to `./dist/conduit`.
 
 ## Run
 
 ```bash
-./conduit
-# or
-make run
+make run          # copies config files to dist/, then go run
 ```
 
-Open [http://localhost:8080](http://localhost:8080) in your browser, enter a host and username, and connect. The password is collected interactively in the terminal.
+Open [http://localhost:8080](http://localhost:8080), enter a host and username, and connect. The password is collected interactively in the terminal.
+
+## Configuration
+
+Conduit reads configs from `./conduit.yaml` or `/etc/conduit/conduit.yaml`. Both files are merged when present; the local file wins on duplicate keys.
+
+```yaml
+# Resolver to use: "file" (default) or "api"
+resolver: file
+
+# Set to false to prevent local shell sessions
+enable_local_shell: true
+
+# API resolver settings (only used when resolver: api)
+api:
+  url: http://localhost:8080/conduit/resolve
+  connect_timeout: 5s
+  response_timeout: 10s
+```
+
+## Resolvers
+
+A resolver maps the host identifier and username from the browser form to the session parameters Conduit needs to open the connection. Two resolvers are included:
+
+### File resolver (default)
+
+Reads hosts from `./hosts.yaml` or `/etc/conduit/hosts.yaml`. Both files are merged; the local file wins.
+
+```yaml
+local:
+  shell: /bin/bash
+  username: ""
+
+hosts:
+  myserver:
+    address: 192.168.1.10
+    port: 22
+    username: admin
+    password: ""
+```
+
+Set `resolver: file` in `conduit.yaml` (or omit it — file is the default).
+
+### API resolver
+
+On each connection attempt Conduit POSTs a JSON request to the configured URL and uses the response to open the session.
+
+**Request**
+```json
+{ "type": "ssh", "host": "myserver", "user": "admin" }
+```
+`type` is `"ssh"` for named hosts and `"local"` for local shell requests.  
+The `Authorization: Bearer <token>` header is included when the browser sends a `conduit_auth` cookie.
+
+**Response**
+```json
+{ "type": "ssh", "address": "192.168.1.10", "port": "22", "username": "admin", "password": "" }
+{ "type": "local", "shell": "/bin/bash", "username": "admin" }
+```
+
+Enable it in `conduit.yaml`:
+```yaml
+resolver: api
+api:
+  url: https://my-auth-backend/conduit/resolve
+```
+
+## mockapi — API resolver test server
+
+`cmd/mockapi` is a standalone HTTP server that implements the API resolver protocol using `hosts-mockapi.yaml` as its data source. Use it to test the `api` resolver without a real backend.
+
+```bash
+make run-mockapi
+```
+
+It reads `conduit.yaml` to match the configured port and endpoint. Edit `hosts-mockapi.yaml` to control what the mock returns — it follows the same schema as `hosts.yaml`.
 
 ## Development
 
 ```bash
-make test       # run tests
-make lint       # run golangci-lint (requires golangci-lint installed)
-make clean      # remove binary
+make test          # run tests
+make lint          # run golangci-lint (requires golangci-lint installed)
+make clean         # remove binary
+make vendor-xterm  # update vendored xterm.js (requires npm)
 ```
-
-To update the vendored xterm.js (requires npm):
-
-```bash
-make vendor-xterm
-```
-
-## Third-party
-
-| Dependency | License |
-|---|---|
-| [xterm.js](https://github.com/xtermjs/xterm.js) | MIT |
-| [gin](https://github.com/gin-gonic/gin) | MIT |
-| [gorilla/websocket](https://github.com/gorilla/websocket) | BSD-2-Clause |
-| [golang.org/x/crypto](https://pkg.go.dev/golang.org/x/crypto) | BSD-3-Clause |
-
-## License
-
-MIT © Leonardo Fernandes

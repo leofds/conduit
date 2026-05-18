@@ -1,0 +1,20 @@
+# conduit mockapi host configuration
+# Place this file at ./hosts-mockapi.yaml (next to the mockapi binary) or /etc/conduit/hosts-mockapi.yaml.
+# When both exist they are merged; entries in ./hosts-mockapi.yaml override /etc/conduit/hosts-mockapi.yaml.
+# This file is used exclusively by cmd/mockapi for integration testing.
+
+local:
+  shell: /bin/bash
+  username: ""
+
+hosts:
+  myserver:
+    address: 192.168.1.10
+    port: 22
+    username: admin
+    password: ""
+  ng:
+    address: 192.168.45.89
+    port: 22
+    username: admin
+    password: ""

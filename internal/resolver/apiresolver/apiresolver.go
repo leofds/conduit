@@ -55,7 +55,7 @@ func New(cfg Config) (*Resolver, error) {
 }
 
 // requestBody is the JSON payload sent to the API.
-// Type is "ssh" for SSH hosts and "localshell" for local shell requests.
+// Type is "ssh" for SSH hosts and "local" for local shell requests.
 type requestBody struct {
 	Type config.SessionType `json:"type"`
 	Host string             `json:"host"`
@@ -63,7 +63,7 @@ type requestBody struct {
 }
 
 // responseBody is the JSON payload returned by the API.
-// The "type" field must be "ssh" or "localshell".
+// The "type" field must be "ssh" or "local".
 //
 // SSH example:
 //
@@ -71,7 +71,7 @@ type requestBody struct {
 //
 // Local example:
 //
-//	{"type":"localshell","shell":"/bin/bash","username":"admin"}
+//	{"type":"local","shell":"/bin/bash","username":"admin"}
 type responseBody struct {
 	Type     config.SessionType `json:"type"`
 	Address  string             `json:"address"`
