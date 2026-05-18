@@ -27,8 +27,9 @@ func (LocalConfig) isSessionConfig() {}
 
 // Request carries the identifying information sent by the client.
 type Request struct {
-	Host string
-	User string
+	Host  string
+	User  string
+	Token string
 }
 
 // Resolver looks up the session configuration for a given request.

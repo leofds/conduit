@@ -1,0 +1,22 @@
+# Conduit main configuration
+# Place this file at ./conduit.yaml (next to the binary) or /etc/conduit/conduit.yaml.
+# When both exist they are merged; entries in ./conduit.yaml override /etc/conduit/conduit.yaml.
+
+# Resolver to use: "file" (default) or "api"
+resolver: api
+
+# Localhost shell access: set to false to prevent localhost shell sessions
+enable_local_shell: true
+
+# API resolver configuration (used when resolver: api)
+# The resolver will POST to http://<host>:<port><endpoint> with:
+#   Body:    {"type": "ssh"|"local", "host": "<host>", "user": "<user>"}
+#   Header:  Authorization: Bearer <token>  (only when conduit_auth cookie is present)
+#
+# Expected response:
+#   {"type": "ssh",   "address": "...", "port": "22", "username": "...", "password": "..."}
+#   {"type": "local", "shell": "/bin/bash", "username": "..."}
+api:
+  url: http://localhost:8040/conduit/resolve
+  connect_timeout: 5s
+  response_timeout: 10s

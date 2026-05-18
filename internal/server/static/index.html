@@ -49,8 +49,9 @@
  ╚██████╗╚██████╔╝██║ ╚████║██████╔╝╚██████╔╝██║   ██║
   ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═════╝  ╚═════╝ ╚═╝   ╚═╝</pre>
     </div>
-    <input id="host" type="text"  placeholder="Host (leave empty for local shell)" autocomplete="off" />
-    <input id="user" type="text"  placeholder="Username"      autocomplete="off" />
+    <input id="host"  type="text"     placeholder="Host (leave empty for local shell)" autocomplete="off" />
+    <input id="user"  type="text"     placeholder="Username (optional)" autocomplete="off" />
+    <input id="token" type="password" placeholder="Token (optional)" autocomplete="off" />
     <button type="submit">Connect</button>
   </form>
 
@@ -64,8 +65,12 @@
   <script>
     document.getElementById('form').addEventListener('submit', e => {
       e.preventDefault();
-      const host = document.getElementById('host').value.trim();
-      const user = document.getElementById('user').value.trim();
+      const host  = document.getElementById('host').value.trim();
+      const user  = document.getElementById('user').value.trim();
+      const token = document.getElementById('token').value.trim();
+      if (token) {
+        document.cookie = `conduit_token=${encodeURIComponent(token)}; Path=/; SameSite=Lax; Secure`;
+      }
       const paramsObj = {};
       if (host) paramsObj.host = host;
       if (user) paramsObj.user = user;

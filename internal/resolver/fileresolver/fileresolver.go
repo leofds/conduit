@@ -9,12 +9,15 @@ import (
 
 	"github.com/goccy/go-yaml"
 
+	"github.com/leofds/conduit/internal/config"
 	"github.com/leofds/conduit/internal/resolver"
 )
 
 var configPaths = []string{
 	"/etc/conduit/hosts.yaml",
+	"/etc/conduit/hosts.yml",
 	"./hosts.yaml",
+	"./hosts.yml",
 }
 
 type hostEntry struct {
@@ -69,7 +72,7 @@ func New() (*Resolver, error) {
 }
 
 func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error) {
-	if req.Host == "local" {
+	if req.Host == config.Local {
 		if r.local == nil {
 			return nil, fmt.Errorf("local session not configured")
 		}

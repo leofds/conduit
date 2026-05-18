@@ -14,6 +14,7 @@ build:
 
 run:
 	@[ -f hosts.yaml ] && cp hosts.yaml dist/hosts.yaml || true
+	@[ -f conduit.yaml ] && cp conduit.yaml dist/conduit.yaml || true
 	go run $(LDFLAGS) $(CMD)
 
 test:

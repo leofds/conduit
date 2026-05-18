@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 
+	"github.com/leofds/conduit/internal/config"
 	"github.com/leofds/conduit/internal/resolver"
 	"github.com/leofds/conduit/internal/session"
 	sessionlocal "github.com/leofds/conduit/internal/session/local"
@@ -20,13 +21,26 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+// tokenFromCookie returns the value of the conduit_auth cookie, or empty string if absent.
+func tokenFromCookie(c *gin.Context) string {
+	token, _ := c.Cookie("conduit_token")
+	return token
+}
+
 // wsHandler upgrades the connection to WebSocket and dispatches to the appropriate session runner.
 // Session configuration (method, credentials, host, port, shell) is resolved via s.resolver.
 func (s *Server) wsHandler(c *gin.Context) {
 	host := c.Param("host")
 	user := c.Query("user")
+	token := tokenFromCookie(c)
 
-	cfg, err := s.resolver.Resolve(resolver.Request{Host: host, User: user})
+	if host == config.Local && !s.allowLocal {
+		log.Printf("local shell session blocked (enable_local_shell=false)")
+		c.JSON(http.StatusForbidden, gin.H{"error": "local shell sessions are disabled"})
+		return
+	}
+
+	cfg, err := s.resolver.Resolve(resolver.Request{Host: host, User: user, Token: token})
 	if err != nil {
 		log.Printf("resolver error host=%s user=%s: %v", host, user, err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})

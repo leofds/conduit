@@ -8,17 +8,43 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/leofds/conduit/internal/config"
+	"github.com/leofds/conduit/internal/resolver"
+	"github.com/leofds/conduit/internal/resolver/apiresolver"
 	"github.com/leofds/conduit/internal/resolver/fileresolver"
 	"github.com/leofds/conduit/internal/server"
 	"github.com/leofds/conduit/internal/version"
 )
 
 func main() {
-	r, err := fileresolver.New()
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Failed to load host config: %v", err)
+		log.Fatalf("Failed to load config: %v", err)
 	}
+
+	var r resolver.Resolver
+	switch cfg.Resolver {
+	case config.ResolverAPI:
+		r, err = apiresolver.New(apiresolver.Config{
+			URL:             cfg.API.URL,
+			ConnectTimeout:  cfg.API.ConnectTimeout,
+			ResponseTimeout: cfg.API.ResponseTimeout,
+		})
+		if err != nil {
+			log.Fatalf("API resolver: %v", err)
+		}
+		log.Printf("Resolver: api → %s", cfg.API.URL)
+	default: // ResolverFile
+		fr, err := fileresolver.New()
+		if err != nil {
+			log.Fatalf("Failed to load host config: %v", err)
+		}
+		r = fr
+		log.Printf("Resolver: file")
+	}
+
 	srv := server.New(r)
+	srv.SetAllowLocal(cfg.EnableLocalShell)
 
 	go func() {
 		log.Printf("Starting conduit %s on :8080", version.Version)

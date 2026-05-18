@@ -19,15 +19,21 @@ type Server struct {
 	router     *gin.Engine
 	httpServer *http.Server
 	resolver   resolver.Resolver
+	allowLocal bool
 }
 
 func New(r resolver.Resolver) *Server {
 	gin := gin.Default()
 
-	s := &Server{router: gin, resolver: r}
+	s := &Server{router: gin, resolver: r, allowLocal: true}
 	s.registerRoutes()
 
 	return s
+}
+
+// SetAllowLocal controls whether local shell sessions are permitted.
+func (s *Server) SetAllowLocal(allow bool) {
+	s.allowLocal = allow
 }
 
 func (s *Server) registerRoutes() {
