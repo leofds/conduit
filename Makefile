@@ -6,16 +6,21 @@ CMD           := ./cmd/conduit
 VERSION       := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS       := -ldflags "-X github.com/leofds/conduit/internal/version.Version=$(VERSION)"
 
-.PHONY: build run test lint clean vendor-xterm
+.PHONY: build run run-mockapi copy-configs test lint clean vendor-xterm
 
 build:
 	mkdir -p dist
 	go build $(LDFLAGS) -o $(BINARY) $(CMD)
 
-run:
+copy-configs:
 	@[ -f hosts.yaml ] && cp hosts.yaml dist/hosts.yaml || true
 	@[ -f conduit.yaml ] && cp conduit.yaml dist/conduit.yaml || true
+
+run: copy-configs
 	go run $(LDFLAGS) $(CMD)
+
+run-mockapi: copy-configs
+	go run ./cmd/mockapi
 
 test:
 	go test ./...
