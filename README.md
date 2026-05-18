@@ -4,7 +4,8 @@ Conduit is a lightweight web terminal server written in Go. It gives you browser
 
 The primary use case is providing interactive console access — to the local machine or to remote hosts via SSH — directly from a browser, with no client-side software required beyond the browser itself.
 
-<img width="776" height="362" alt="image" src="https://github.com/user-attachments/assets/a4cd212d-92b3-462d-a48d-589078065776" />
+<img width="767" height="402" alt="image" src="https://github.com/user-attachments/assets/aac92a2d-b637-4e68-ab96-1975e7b6cd89" />
+
 
 ## Build
 
