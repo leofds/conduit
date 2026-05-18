@@ -13,6 +13,7 @@ build:
 	go build $(LDFLAGS) -o $(BINARY) $(CMD)
 
 run:
+	@[ -f hosts.yaml ] && cp hosts.yaml dist/hosts.yaml || true
 	go run $(LDFLAGS) $(CMD)
 
 test:

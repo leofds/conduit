@@ -12,6 +12,7 @@ import (
 	"github.com/creack/pty"
 	"github.com/gorilla/websocket"
 
+	"github.com/leofds/conduit/internal/resolver"
 	"github.com/leofds/conduit/internal/session"
 )
 
@@ -22,14 +23,15 @@ type Runner struct {
 	shell string
 }
 
-func New(user, shell string) *Runner {
+func New(cfg resolver.LocalConfig) *Runner {
+	shell := cfg.Shell
 	if shell == "" {
 		shell = os.Getenv("SHELL")
 		if shell == "" {
 			shell = "/bin/sh"
 		}
 	}
-	return &Runner{user: user, shell: shell}
+	return &Runner{user: cfg.Username, shell: shell}
 }
 
 func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {

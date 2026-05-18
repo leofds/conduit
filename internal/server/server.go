@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/leofds/conduit/internal/resolver"
 )
 
 //go:embed static
@@ -16,12 +18,13 @@ var staticFiles embed.FS
 type Server struct {
 	router     *gin.Engine
 	httpServer *http.Server
+	resolver   resolver.Resolver
 }
 
-func New() *Server {
-	r := gin.Default()
+func New(r resolver.Resolver) *Server {
+	gin := gin.Default()
 
-	s := &Server{router: r}
+	s := &Server{router: gin, resolver: r}
 	s.registerRoutes()
 
 	return s
@@ -53,7 +56,7 @@ func (s *Server) registerRoutes() {
 	sub, _ := fs.Sub(staticFiles, "static")
 	s.router.StaticFS("/static", http.FS(sub))
 
-	s.router.GET("/ws", wsHandler)
+	s.router.GET("/ws/:host", s.wsHandler)
 }
 
 func (s *Server) Start(addr string) error {

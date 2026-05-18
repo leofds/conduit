@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 	gossh "golang.org/x/crypto/ssh"
 
+	"github.com/leofds/conduit/internal/resolver"
 	"github.com/leofds/conduit/internal/session"
 )
 
@@ -25,10 +26,10 @@ type Runner struct {
 	user string
 }
 
-func New(host, port, user string) *Runner {
+func New(cfg resolver.SSHConfig) *Runner {
 	return &Runner{
-		addr: fmt.Sprintf("%s:%s", host, port),
-		user: user,
+		addr: fmt.Sprintf("%s:%s", cfg.Address, cfg.Port),
+		user: cfg.Username,
 	}
 }
 

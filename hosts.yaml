@@ -1,0 +1,14 @@
+# conduit host configuration
+# Place this file at ./hosts.yaml (next to the binary) or /etc/conduit/hosts.yaml.
+# When both exist they are merged; entries in ./hosts.yaml override /etc/conduit/hosts.yaml.
+
+local:
+  shell: /bin/bash
+  username: ""
+
+hosts:
+  myserver:
+    address: 192.168.1.10
+    port: 22
+    username: admin
+    password: ""

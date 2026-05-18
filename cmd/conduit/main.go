@@ -8,12 +8,17 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/leofds/conduit/internal/resolver/fileresolver"
 	"github.com/leofds/conduit/internal/server"
 	"github.com/leofds/conduit/internal/version"
 )
 
 func main() {
-	srv := server.New()
+	r, err := fileresolver.New()
+	if err != nil {
+		log.Fatalf("Failed to load host config: %v", err)
+	}
+	srv := server.New(r)
 
 	go func() {
 		log.Printf("Starting conduit %s on :8080", version.Version)

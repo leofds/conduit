@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 
+	"github.com/leofds/conduit/internal/resolver"
 	"github.com/leofds/conduit/internal/session"
 	sessionlocal "github.com/leofds/conduit/internal/session/local"
 	sessionssh "github.com/leofds/conduit/internal/session/ssh"
@@ -20,33 +21,30 @@ var upgrader = websocket.Upgrader{
 }
 
 // wsHandler upgrades the connection to WebSocket and dispatches to the appropriate session runner.
-//
-// Query parameters:
-//
-//	method - "ssh" or "local" (default: "local")
-//	user   - username (required for ssh; optional for local)
-//	shell  - shell binary for local sessions (default: $SHELL or /bin/sh)
-//	host   - SSH host (required for ssh)
-//	port   - SSH port (default: 22, ssh only)
-func wsHandler(c *gin.Context) {
-	method := c.DefaultQuery("method", "local")
+// Session configuration (method, credentials, host, port, shell) is resolved via s.resolver.
+func (s *Server) wsHandler(c *gin.Context) {
+	host := c.Param("host")
 	user := c.Query("user")
-	shell := c.Query("shell")
+
+	cfg, err := s.resolver.Resolve(resolver.Request{Host: host, User: user})
+	if err != nil {
+		log.Printf("resolver error host=%s user=%s: %v", host, user, err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
 
 	var runner session.Runner
-	switch method {
-	case "ssh":
-		host := c.Query("host")
-		port := c.DefaultQuery("port", "22")
-		if host == "" || user == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "host and user are required for SSH"})
-			return
-		}
-		runner = sessionssh.New(host, port, user)
-	case "local":
-		runner = sessionlocal.New(user, shell)
+	switch sess := cfg.(type) {
+	case resolver.SSHConfig:
+		runner = sessionssh.New(sess)
+		log.Printf("session open  method=ssh user=%s host=%s", sess.Username, sess.Address)
+		defer log.Printf("session close method=ssh user=%s host=%s", sess.Username, sess.Address)
+	case resolver.LocalConfig:
+		runner = sessionlocal.New(sess)
+		log.Printf("session open  method=local user=%s", sess.Username)
+		defer log.Printf("session close method=local user=%s", sess.Username)
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "unknown method: " + method})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported session type"})
 		return
 	}
 
@@ -57,7 +55,5 @@ func wsHandler(c *gin.Context) {
 	}
 	defer func() { _ = wsConn.Close() }()
 
-	log.Printf("session open  method=%s user=%s", method, user)
 	runner.Run(c.Request.Context(), wsConn)
-	log.Printf("session close method=%s user=%s", method, user)
 }

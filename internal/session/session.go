@@ -2,10 +2,14 @@ package session
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/gorilla/websocket"
 )
+
+// ErrInterrupted is returned by ReadLine when the user presses Ctrl+C (\x03).
+var ErrInterrupted = errors.New("interrupted")
 
 // Runner is the interface implemented by each terminal backend.
 type Runner interface {
@@ -37,6 +41,7 @@ func (w *Writer) Write(p []byte) (int, error) {
 }
 
 // ReadLine reads bytes from the WebSocket until \r or \n and returns the line without the terminator.
+// Returns ErrInterrupted if the user sends Ctrl+C (\x03).
 func ReadLine(conn *websocket.Conn) (string, error) {
 	var buf []byte
 	for {
@@ -45,6 +50,9 @@ func ReadLine(conn *websocket.Conn) (string, error) {
 			return "", err
 		}
 		for _, b := range data {
+			if b == '\x03' {
+				return "", ErrInterrupted
+			}
 			if b == '\r' || b == '\n' {
 				return string(buf), nil
 			}

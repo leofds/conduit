@@ -66,18 +66,11 @@
       e.preventDefault();
       const host = document.getElementById('host').value.trim();
       const user = document.getElementById('user').value.trim();
-
-      if (host) {
-        // SSH
-        if (!user) { alert('Username is required for SSH.'); return; }
-        const params = new URLSearchParams({ method: 'ssh', host, user });
-        window.location.href = `/terminal?${params}`;
-      } else {
-        // Local shell
-        const params = new URLSearchParams({ method: 'local' });
-        if (user) params.set('user', user);
-        window.location.href = `/terminal?${params}`;
-      }
+      const paramsObj = {};
+      if (host) paramsObj.host = host;
+      if (user) paramsObj.user = user;
+      const params = new URLSearchParams(paramsObj);
+      window.location.href = `/terminal?${params}`;
     });
   </script>
 </body>
