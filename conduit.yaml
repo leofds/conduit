@@ -2,11 +2,14 @@
 # Place this file at ./conduit.yaml (next to the binary) or /etc/conduit/conduit.yaml.
 # When both exist they are merged; entries in ./conduit.yaml override /etc/conduit/conduit.yaml.
 
-# Resolver to use: "file" (default) or "api"
-resolver: api
-
 # Localhost shell access: set to false to prevent localhost shell sessions
 enable_local_shell: true
+
+# Demo page: set to false to disable the /demo page
+demo: true
+
+# Resolver to use: "file" (default) or "api"
+resolver: file
 
 # API resolver configuration (used when resolver: api)
 # The resolver will POST to http://<host>:<port><endpoint> with:

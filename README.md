@@ -88,13 +88,13 @@ api:
 
 ## mockapi — API resolver test server
 
-`cmd/mockapi` is a standalone HTTP server that implements the API resolver protocol using `hosts-mockapi.yaml` as its data source. Use it to test the `api` resolver without a real backend.
+`cmd/mockapi` is a standalone HTTP server that implements the API resolver protocol using `hosts.yaml` as its data source. Use it to test the `api` resolver without a real backend.
 
 ```bash
 make run-mockapi
 ```
 
-It reads `conduit.yaml` to match the configured port and endpoint. Edit `hosts-mockapi.yaml` to control what the mock returns — it follows the same schema as `hosts.yaml`.
+It reads `conduit.yaml` to match the configured port and endpoint. Edit `hosts.yaml` to control what the mock returns — it follows the same schema as `hosts.yaml`.
 
 ## Development
 

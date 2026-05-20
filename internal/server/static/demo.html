@@ -69,13 +69,14 @@
       const user  = document.getElementById('user').value.trim();
       const token = document.getElementById('token').value.trim();
       if (token) {
-        document.cookie = `conduit_token=${encodeURIComponent(token)}; Path=/; SameSite=Lax; Secure`;
+        document.cookie = `conduit_session=${encodeURIComponent(token)}; Path=/; SameSite=Lax; Secure`;
       }
       const paramsObj = {};
       if (host) paramsObj.host = host;
       if (user) paramsObj.user = user;
       const params = new URLSearchParams(paramsObj);
-      window.location.href = `/terminal?${params}`;
+      const query = params.toString();
+      window.location.href = query ? `/terminal?${query}` : '/terminal';
     });
   </script>
 </body>

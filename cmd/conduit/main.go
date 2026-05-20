@@ -45,6 +45,7 @@ func main() {
 
 	srv := server.New(r)
 	srv.SetAllowLocal(cfg.EnableLocalShell)
+	srv.SetDemo(cfg.Demo)
 
 	go func() {
 		log.Printf("Starting conduit %s on :8080", version.Version)

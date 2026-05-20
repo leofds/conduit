@@ -20,12 +20,13 @@ type Server struct {
 	httpServer *http.Server
 	resolver   resolver.Resolver
 	allowLocal bool
+	demo       bool
 }
 
 func New(r resolver.Resolver) *Server {
 	gin := gin.Default()
 
-	s := &Server{router: gin, resolver: r, allowLocal: true}
+	s := &Server{router: gin, resolver: r, allowLocal: true, demo: true}
 	s.registerRoutes()
 
 	return s
@@ -36,13 +37,30 @@ func (s *Server) SetAllowLocal(allow bool) {
 	s.allowLocal = allow
 }
 
+// SetDemo controls whether the demo page is enabled.
+func (s *Server) SetDemo(enabled bool) {
+	s.demo = enabled
+}
+
 func (s *Server) registerRoutes() {
 	s.router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
 	s.router.GET("/", func(c *gin.Context) {
-		data, err := staticFiles.ReadFile("static/index.html")
+		if !s.demo {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		c.Redirect(http.StatusFound, "/demo")
+	})
+
+	s.router.GET("/demo", func(c *gin.Context) {
+		if !s.demo {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		data, err := staticFiles.ReadFile("static/demo.html")
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			return

@@ -23,7 +23,7 @@ var upgrader = websocket.Upgrader{
 
 // tokenFromCookie returns the value of the conduit_auth cookie, or empty string if absent.
 func tokenFromCookie(c *gin.Context) string {
-	token, _ := c.Cookie("conduit_token")
+	token, _ := c.Cookie("conduit_session")
 	return token
 }
 
@@ -50,7 +50,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 	// Clear the token cookie now that it has been consumed.
 	if token != "" {
 		http.SetCookie(c.Writer, &http.Cookie{
-			Name:     "conduit_token",
+			Name:     "conduit_session",
 			Value:    "",
 			Path:     "/",
 			MaxAge:   -1,

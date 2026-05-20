@@ -37,6 +37,7 @@ type APIConfig struct {
 type Config struct {
 	Resolver         ResolverType `yaml:"resolver"`           // "file" (default) or "api"
 	EnableLocalShell bool         `yaml:"enable_local_shell"` // allow local shell sessions (default true)
+	Demo             bool         `yaml:"demo"`               // enable the demo page (default true)
 	API              APIConfig    `yaml:"api"`
 }
 
@@ -46,6 +47,7 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		Resolver:         ResolverFile,
 		EnableLocalShell: true,
+		Demo:             true,
 		API: APIConfig{
 			ConnectTimeout:  5 * time.Second,
 			ResponseTimeout: 10 * time.Second,

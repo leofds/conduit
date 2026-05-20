@@ -28,10 +28,10 @@ import (
 )
 
 var mockapiHostsPaths = []string{
-	"/etc/conduit/hosts-mockapi.yaml",
-	"/etc/conduit/hosts-mockapi.yml",
-	"./hosts-mockapi.yaml",
-	"./hosts-mockapi.yml",
+	"/etc/conduit/hosts.yaml",
+	"/etc/conduit/hosts.yaml",
+	"./hosts.yaml",
+	"./hosts.yaml",
 }
 
 // These structs mirror apiresolver's request/response bodies.
