@@ -60,6 +60,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 	var runner session.Runner
 	switch sess := cfg.(type) {
 	case resolver.SSHConfig:
+		sess.Term = s.term
 		runner = sessionssh.New(sess)
 		log.Printf("session open  method=ssh user=%s host=%s", sess.Username, sess.Address)
 		defer log.Printf("session close method=ssh user=%s host=%s", sess.Username, sess.Address)

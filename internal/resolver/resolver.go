@@ -13,14 +13,15 @@ type SSHConfig struct {
 	Port     string
 	Username string
 	Password string
+	Term     string
 }
 
 func (SSHConfig) isSessionConfig() {}
 
 // LocalConfig holds the parameters for a local shell session.
 type LocalConfig struct {
-	Command  string
-	Term     string
+	Command string
+	Term    string
 }
 
 func (LocalConfig) isSessionConfig() {}

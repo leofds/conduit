@@ -37,13 +37,13 @@ type APIConfig struct {
 type LocalShellConfig struct {
 	Enable  bool   `yaml:"enable"`
 	Command string `yaml:"command"`
-	Term    string `yaml:"term"`
 }
 
 // Config is the top-level Conduit configuration.
 type Config struct {
 	Resolver ResolverType     `yaml:"resolver"` // "file" (default) or "api"
 	Port     int              `yaml:"port"`     // HTTP listen port (default 8080)
+	Term     string           `yaml:"term"`     // terminal type for all sessions (default xterm-256color)
 	Demo     bool             `yaml:"demo"`     // enable the demo page (default true)
 	Local    LocalShellConfig `yaml:"local"`    // local shell session config
 	API      APIConfig        `yaml:"api"`
@@ -55,10 +55,10 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		Resolver: ResolverFile,
 		Port:     8080,
+		Term:     "xterm-256color",
 		Demo:     true,
 		Local: LocalShellConfig{
 			Enable: true,
-			Term:   "xterm-256color",
 		},
 		API: APIConfig{
 			ConnectTimeout:  5 * time.Second,

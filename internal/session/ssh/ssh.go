@@ -24,12 +24,18 @@ const (
 type Runner struct {
 	addr string // host:port
 	user string
+	term string
 }
 
 func New(cfg resolver.SSHConfig) *Runner {
+	term := cfg.Term
+	if term == "" {
+		term = "xterm-256color"
+	}
 	return &Runner{
 		addr: fmt.Sprintf("%s:%s", cfg.Address, cfg.Port),
 		user: cfg.Username,
+		term: term,
 	}
 }
 
@@ -117,7 +123,7 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 		gossh.TTY_OP_ISPEED: 14400,
 		gossh.TTY_OP_OSPEED: 14400,
 	}
-	if err := sesh.RequestPty("xterm-256color", 24, 80, modes); err != nil {
+	if err := sesh.RequestPty(r.term, 24, 80, modes); err != nil {
 		notify("PTY request failed: %v", err)
 		return
 	}

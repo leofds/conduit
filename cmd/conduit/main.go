@@ -47,7 +47,7 @@ func main() {
 	srv := server.New(r)
 	srv.SetAllowLocal(cfg.Local.Enable)
 	srv.SetDemo(cfg.Demo)
-	srv.SetTerm(cfg.Local.Term)
+	srv.SetTerm(cfg.Term)
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	go func() {

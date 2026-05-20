@@ -8,6 +8,9 @@ demo: true
 # HTTP listen port
 port: 8080
 
+# Terminal type for all sessions (local and SSH)
+term: xterm-256color
+
 # Local shell session
 local:
   enable: true
@@ -21,7 +24,6 @@ local:
   # To allow the conduit process user (e.g. conduit) to run /bin/login via sudo,
   # create /etc/sudoers.d/conduit with:
   #   conduit ALL=(root) NOPASSWD: /bin/login
-  term: xterm-256color
 
 # Resolver to use: "file" (default) or "api"
 resolver: file

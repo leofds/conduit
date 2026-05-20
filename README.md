@@ -46,6 +46,9 @@ resolver: file
 # HTTP listen port
 port: 8080
 
+# Terminal type for all sessions (local and SSH)
+term: xterm-256color
+
 # Demo page
 demo: true
 
@@ -53,7 +56,6 @@ demo: true
 local:
   enable: true
   # command: "/bin/bash"  # defaults to /bin/login when not set
-  term: xterm-256color
 
 # API resolver settings (only used when resolver: api)
 api:
