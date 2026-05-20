@@ -2,7 +2,7 @@
 
 Conduit is a lightweight web terminal server written in Go. It gives you browser-based access to a local shell session or a remote host over SSH, served through a self-contained web page powered by [xterm.js](https://xtermjs.org/).
 
-This project is intended to be embedded into your application as an internal service, with your own authentication and host resolution logic plugged in via the resolver interface.
+This project is intended to be embedded into your application as an internal service, with your own authentication and host resolution logic plugged in via the resolver interface. It is designed to run behind a reverse proxy (e.g. nginx) that handles TLS termination.
 
 <img width="998" height="435" alt="image" src="https://github.com/user-attachments/assets/0b6656ee-7750-49c6-ae8b-f3279657aef9" />
 
@@ -23,17 +23,17 @@ make run          # copies config files to dist/, then go run
 
 ## How to Use
 
-Open [http://localhost:8080/demo](http://localhost:8080/demo) in your browser. You will see a form with one field:
+1. Run the project.
+2. Open [http://localhost:8080/demo](http://localhost:8080/demo) in your browser. You will see a form with one field:
 
-- **Host** — the name of a device defined in `hosts.yaml`. Conduit uses this name to look up the address and credentials server-side, so they are never sent to or exposed in the browser.
+  - **Host** the name of a device defined in `hosts.yaml`. Conduit uses this name to look up the address and credentials server-side, so they are never sent to or exposed in the browser.
+    Leave this field empty to open a local shell session on the machine running Conduit. See [Local shell](#local-shell) for setup options.
 
-The demo page also has a hardcoded JWT token (payload `{"sub":"1234567890","name":"John Doe","admin":true}`, signed with secret `conduit`) that is automatically sent as a `conduit_session` cookie for testing against `mockapi`.
-
-Leave the host field empty to open a local shell session on the machine running Conduit.
+3. Click on `Connect` to open the terminal.
 
 Once connected, the terminal opens at `/terminal` and the session runs until you close the tab or the idle timeout is reached.
 
-> Credentials (address, username, password) are stored only in `hosts.yaml` on the server. The browser only ever sends the device name — never the actual credentials.
+The demo page also has a hardcoded JWT token (payload `{"sub":"1234567890","name":"John Doe","admin":true}`, signed with secret `conduit`) that is automatically sent as a `conduit_session` cookie for testing with the `api` resolver.
 
 ## Configuration
 
@@ -55,7 +55,7 @@ demo: true
 # Local shell session
 local:
   enable: true
-  # command: "/bin/bash"  # defaults to /bin/login when not set
+  command: "/bin/bash"
 
 # API resolver settings (only used when resolver: api)
 api:
@@ -63,6 +63,18 @@ api:
   connect_timeout: 5s
   response_timeout: 10s
 ```
+
+### Local shell
+
+The `command` field controls what program is launched for local sessions:
+
+- **`/bin/bash`**: opens a shell directly as the conduit process user, no login prompt. Simplest option, good for single-user or testing setups.
+- **`# /bin/bash`** (commented): shows a login prompt (username + password). Requires conduit to run as root, or the process user to have sudo access to `/bin/login`.
+To grant sudo access for a user named `conduit`, run as root:
+  ```bash
+  echo "conduit ALL=(root) NOPASSWD: /bin/login" | sudo tee /etc/sudoers.d/conduit
+  ```
+  Replace `conduit` with the user running the conduit process.
 
 ## Resolvers
 
@@ -78,7 +90,7 @@ hosts:
     address: 192.168.1.10
     port: 22
     username: admin
-    password: ""
+    password: ""    # Optional
 ```
 
 Set `resolver: file` in `conduit.yaml` (or omit it — file is the default).

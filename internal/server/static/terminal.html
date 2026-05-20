@@ -18,7 +18,12 @@
     const params = new URLSearchParams(location.search);
     const host   = params.get('host') || 'local';
 
-    const term = new Terminal();
+    const term = new Terminal({
+      theme: {
+        background: '#1e1e1e',
+        foreground: '#d4d4d4',
+      }
+    });
 
     term.open(document.getElementById('terminal'));
 

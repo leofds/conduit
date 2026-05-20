@@ -14,16 +14,17 @@ term: xterm-256color
 # Local shell session
 local:
   enable: true
-  # command: "/bin/bash"
+
+  # command sets the program launched when a local session is requested.
   #
-  # Default behaviour when command is not set:
-  #   - Conduit running as root      → /bin/login
-  #   - Conduit running as non-root  → sudo -n /bin/login
-  #                                    (requires the conduit process user to be in sudoers)
+  # Option 1: Direct shell (simplest, no login prompt)
+  # Default "/bin/bash" opens a shell as the user/dist/conduit running the conduit process. No password required.
   #
-  # To allow the conduit process user (e.g. conduit) to run /bin/login via sudo,
-  # create /etc/sudoers.d/conduit with:
-  #   conduit ALL=(root) NOPASSWD: /bin/login
+  # Option 2: Login shell (multi-user, shows a login prompt)
+  # Requires conduit to run as root, or the process user to be granted sudo for /bin/login.
+  # To grant sudo access for a user named conduit, run as root:
+  #   echo "conduit ALL=(root) NOPASSWD: /bin/login" > /etc/sudoers.d/conduit
+  command: "/bin/bash"
 
 # Resolver to use: "file" (default) or "api"
 resolver: file
