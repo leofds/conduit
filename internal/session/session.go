@@ -42,12 +42,16 @@ func (w *Writer) Write(p []byte) (int, error) {
 
 // ReadLine reads bytes from the WebSocket until \r or \n and returns the line without the terminator.
 // Returns ErrInterrupted if the user sends Ctrl+C (\x03).
+// Text messages (e.g. resize JSON) are silently skipped.
 func ReadLine(conn *websocket.Conn) (string, error) {
 	var buf []byte
 	for {
-		_, data, err := conn.ReadMessage()
+		msgType, data, err := conn.ReadMessage()
 		if err != nil {
 			return "", err
+		}
+		if msgType == websocket.TextMessage {
+			continue // skip resize/control messages
 		}
 		for _, b := range data {
 			if b == '\x03' {
