@@ -25,17 +25,27 @@ type Runner struct {
 	addr string // host:port
 	user string
 	term string
+	cols uint16
+	rows uint16
 }
 
-func New(cfg resolver.SSHConfig) *Runner {
+func New(cfg resolver.SSHConfig, cols, rows uint16) *Runner {
 	term := cfg.Term
 	if term == "" {
 		term = "xterm-256color"
+	}
+	if cols == 0 {
+		cols = 80
+	}
+	if rows == 0 {
+		rows = 24
 	}
 	return &Runner{
 		addr: fmt.Sprintf("%s:%s", cfg.Address, cfg.Port),
 		user: cfg.Username,
 		term: term,
+		cols: cols,
+		rows: rows,
 	}
 }
 
@@ -123,7 +133,7 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 		gossh.TTY_OP_ISPEED: 14400,
 		gossh.TTY_OP_OSPEED: 14400,
 	}
-	if err := sesh.RequestPty(r.term, 24, 80, modes); err != nil {
+	if err := sesh.RequestPty(r.term, int(r.rows), int(r.cols), modes); err != nil {
 		notify("PTY request failed: %v", err)
 		return
 	}

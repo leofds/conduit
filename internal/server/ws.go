@@ -3,6 +3,7 @@ package server
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -33,6 +34,9 @@ func (s *Server) wsHandler(c *gin.Context) {
 	host := c.Param("host")
 	token := tokenFromCookie(c)
 
+	cols := parseUint16(c.Query("cols"), 80)
+	rows := parseUint16(c.Query("rows"), 24)
+
 	if host == config.Local && !s.allowLocal {
 		log.Printf("local shell session blocked (enable_local_shell=false)")
 		c.JSON(http.StatusForbidden, gin.H{"error": "local shell sessions are disabled"})
@@ -61,12 +65,12 @@ func (s *Server) wsHandler(c *gin.Context) {
 	switch sess := cfg.(type) {
 	case resolver.SSHConfig:
 		sess.Term = s.term
-		runner = sessionssh.New(sess)
+		runner = sessionssh.New(sess, cols, rows)
 		log.Printf("session open  method=ssh user=%s host=%s", sess.Username, sess.Address)
 		defer log.Printf("session close method=ssh user=%s host=%s", sess.Username, sess.Address)
 	case resolver.LocalConfig:
 		sess.Term = s.term
-		runner = sessionlocal.New(sess)
+		runner = sessionlocal.New(sess, cols, rows)
 		log.Printf("session open  method=local command=%s", sess.Command)
 		defer log.Printf("session close method=local command=%s", sess.Command)
 	default:
@@ -82,4 +86,15 @@ func (s *Server) wsHandler(c *gin.Context) {
 	defer func() { _ = wsConn.Close() }()
 
 	runner.Run(c.Request.Context(), wsConn)
+}
+
+func parseUint16(s string, def uint16) uint16 {
+	if s == "" {
+		return def
+	}
+	n, err := strconv.ParseUint(s, 10, 16)
+	if err != nil {
+		return def
+	}
+	return uint16(n)
 }

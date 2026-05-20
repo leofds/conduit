@@ -21,14 +21,22 @@ const idleTimeout = 10 * time.Minute
 type Runner struct {
 	command string
 	term    string
+	cols    uint16
+	rows    uint16
 }
 
-func New(cfg resolver.LocalConfig) *Runner {
+func New(cfg resolver.LocalConfig, cols, rows uint16) *Runner {
 	term := cfg.Term
 	if term == "" {
 		term = "xterm-256color"
 	}
-	return &Runner{command: cfg.Command, term: term}
+	if cols == 0 {
+		cols = 80
+	}
+	if rows == 0 {
+		rows = 24
+	}
+	return &Runner{command: cfg.Command, term: term, cols: cols, rows: rows}
 }
 
 func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
@@ -57,6 +65,7 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 		notify("PTY start failed: %v", err)
 		return
 	}
+	pty.Setsize(ptmx, &pty.Winsize{Rows: r.rows, Cols: r.cols}) //nolint:errcheck
 	defer func() { _ = ptmx.Close() }()
 
 	// PTY output -> WebSocket
