@@ -59,7 +59,6 @@ func New(cfg Config) (*Resolver, error) {
 type requestBody struct {
 	Type config.SessionType `json:"type"`
 	Host string             `json:"host"`
-	User string             `json:"user"`
 }
 
 // responseBody is the JSON payload returned by the API.
@@ -71,22 +70,22 @@ type requestBody struct {
 //
 // Local example:
 //
-//	{"type":"local","shell":"/bin/bash","username":"admin"}
+//	{"type":"local","command":"/bin/bash"}
 type responseBody struct {
 	Type     config.SessionType `json:"type"`
 	Address  string             `json:"address"`
 	Port     string             `json:"port"`
 	Username string             `json:"username"`
 	Password string             `json:"password"`
-	Shell    string             `json:"shell"`
+	Command  string             `json:"command"`
 }
 
 func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error) {
 	reqType := config.SessionTypeSSH
 	if req.Host == config.Local {
-		reqType = config.SessionTypeLocalShell
+		reqType = config.SessionTypeLocal
 	}
-	body, err := json.Marshal(requestBody{Type: reqType, Host: req.Host, User: req.User})
+	body, err := json.Marshal(requestBody{Type: reqType, Host: req.Host})
 	if err != nil {
 		return nil, fmt.Errorf("apiresolver: marshal: %w", err)
 	}
@@ -132,14 +131,10 @@ func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error)
 			Username: result.Username,
 			Password: result.Password,
 		}, nil
-	case config.SessionTypeLocalShell:
-		shell := result.Shell
-		if shell == "" {
-			shell = "/bin/bash"
-		}
+	case config.SessionTypeLocal:
+		command := result.Command
 		return resolver.LocalConfig{
-			Shell:    shell,
-			Username: result.Username,
+			Command: command,
 		}, nil
 	default:
 		return nil, fmt.Errorf("apiresolver: unknown session type %q", result.Type)

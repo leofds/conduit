@@ -7,6 +7,6 @@ const Local = "local"
 type SessionType string
 
 const (
-	SessionTypeSSH        SessionType = "ssh"
-	SessionTypeLocalShell SessionType = "local"
+	SessionTypeSSH   SessionType = "ssh"
+	SessionTypeLocal SessionType = "local"
 )

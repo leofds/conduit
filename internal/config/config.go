@@ -33,21 +33,31 @@ type APIConfig struct {
 	ResponseTimeout time.Duration `yaml:"response_timeout"`
 }
 
+// LocalShellConfig holds shell parameters for local sessions.
+type LocalShellConfig struct {
+	Enable  bool   `yaml:"enable"`
+	Command string `yaml:"command"`
+	Term    string `yaml:"term"`
+}
+
 // Config is the top-level Conduit configuration.
 type Config struct {
-	Resolver         ResolverType `yaml:"resolver"`           // "file" (default) or "api"
-	EnableLocalShell bool         `yaml:"enable_local_shell"` // allow local shell sessions (default true)
-	Demo             bool         `yaml:"demo"`               // enable the demo page (default true)
-	API              APIConfig    `yaml:"api"`
+	Resolver ResolverType     `yaml:"resolver"` // "file" (default) or "api"
+	Demo     bool             `yaml:"demo"`     // enable the demo page (default true)
+	Local    LocalShellConfig `yaml:"local"`    // local shell session config
+	API      APIConfig        `yaml:"api"`
 }
 
 // Load reads conduit.yaml from the standard paths and returns the merged config.
 // Missing files are silently skipped. Returns a default config if none are found.
 func Load() (*Config, error) {
 	cfg := &Config{
-		Resolver:         ResolverFile,
-		EnableLocalShell: true,
-		Demo:             true,
+		Resolver: ResolverFile,
+		Demo:     true,
+		Local: LocalShellConfig{
+			Enable: true,
+			Term:   "xterm-256color",
+		},
 		API: APIConfig{
 			ConnectTimeout:  5 * time.Second,
 			ResponseTimeout: 10 * time.Second,

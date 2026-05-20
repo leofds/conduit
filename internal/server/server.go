@@ -21,12 +21,13 @@ type Server struct {
 	resolver   resolver.Resolver
 	allowLocal bool
 	demo       bool
+	term       string
 }
 
 func New(r resolver.Resolver) *Server {
 	gin := gin.Default()
 
-	s := &Server{router: gin, resolver: r, allowLocal: true, demo: true}
+	s := &Server{router: gin, resolver: r, allowLocal: true, demo: true, term: "xterm-256color"}
 	s.registerRoutes()
 
 	return s
@@ -40,6 +41,13 @@ func (s *Server) SetAllowLocal(allow bool) {
 // SetDemo controls whether the demo page is enabled.
 func (s *Server) SetDemo(enabled bool) {
 	s.demo = enabled
+}
+
+// SetTerm sets the TERM environment variable used for local shell sessions.
+func (s *Server) SetTerm(term string) {
+	if term != "" {
+		s.term = term
+	}
 }
 
 func (s *Server) registerRoutes() {

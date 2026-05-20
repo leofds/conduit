@@ -19,8 +19,8 @@ func (SSHConfig) isSessionConfig() {}
 
 // LocalConfig holds the parameters for a local shell session.
 type LocalConfig struct {
-	Shell    string
-	Username string
+	Command  string
+	Term     string
 }
 
 func (LocalConfig) isSessionConfig() {}
@@ -28,7 +28,6 @@ func (LocalConfig) isSessionConfig() {}
 // Request carries the identifying information sent by the client.
 type Request struct {
 	Host  string
-	User  string
 	Token string
 }
 

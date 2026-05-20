@@ -19,19 +19,16 @@ import (
 const idleTimeout = 10 * time.Minute
 
 type Runner struct {
-	user  string
-	shell string
+	command string
+	term    string
 }
 
 func New(cfg resolver.LocalConfig) *Runner {
-	shell := cfg.Shell
-	if shell == "" {
-		shell = os.Getenv("SHELL")
-		if shell == "" {
-			shell = "/bin/sh"
-		}
+	term := cfg.Term
+	if term == "" {
+		term = "xterm-256color"
 	}
-	return &Runner{user: cfg.Username, shell: shell}
+	return &Runner{command: cfg.Command, term: term}
 }
 
 func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
@@ -45,14 +42,15 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 		cancel()
 	}
 
-	// /bin/login requires root privileges
 	var cmd *exec.Cmd
-	if os.Getuid() == 0 {
+	if r.command != "" {
+		cmd = exec.CommandContext(ctx, r.command)
+	} else if os.Getuid() == 0 {
 		cmd = exec.CommandContext(ctx, "/bin/login")
 	} else {
 		cmd = exec.CommandContext(ctx, "sudo", "-n", "/bin/login")
 	}
-	cmd.Env = append(os.Environ(), "TERM=xterm-256color")
+	cmd.Env = append(os.Environ(), "TERM="+r.term)
 
 	ptmx, err := pty.Start(cmd)
 	if err != nil {

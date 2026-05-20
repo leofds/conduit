@@ -35,7 +35,7 @@ func main() {
 		}
 		log.Printf("Resolver: api → %s", cfg.API.URL)
 	default: // ResolverFile
-		fr, err := fileresolver.New()
+		fr, err := fileresolver.New(cfg.Local)
 		if err != nil {
 			log.Fatalf("Failed to load host config: %v", err)
 		}
@@ -44,8 +44,9 @@ func main() {
 	}
 
 	srv := server.New(r)
-	srv.SetAllowLocal(cfg.EnableLocalShell)
+	srv.SetAllowLocal(cfg.Local.Enable)
 	srv.SetDemo(cfg.Demo)
+	srv.SetTerm(cfg.Local.Term)
 
 	go func() {
 		log.Printf("Starting conduit %s on :8080", version.Version)

@@ -2,7 +2,7 @@
 
 Conduit is a lightweight web terminal server written in Go. It gives you browser-based access to a local shell session or a remote host over SSH, served through a self-contained web page powered by [xterm.js](https://xtermjs.org/).
 
-The primary use case is providing interactive console access — to the local machine or to remote hosts via SSH — directly from a browser, with no client-side software required beyond the browser itself.
+> **This project is intended to be embedded into your application as an internal service, with your own authentication and host resolution logic plugged in via the resolver interface.**
 
 <img width="1052" height="402" alt="image" src="https://github.com/user-attachments/assets/f8925231-f492-4194-a880-fdca738f7c6f" />
 
@@ -19,7 +19,19 @@ make build        # produces ./dist/conduit
 make run          # copies config files to dist/, then go run
 ```
 
-Open [http://localhost:8080](http://localhost:8080), enter a host and username, and connect. The password is collected interactively in the terminal.
+## How to Use
+
+Open [http://localhost:8080/demo](http://localhost:8080/demo) in your browser. You will see a form with one field:
+
+- **Host** — the name of a device defined in `hosts.yaml`. Conduit uses this name to look up the address and credentials server-side, so they are never sent to or exposed in the browser.
+
+The demo page also has a hardcoded JWT token (payload `{"sub":"1234567890","name":"John Doe","admin":true}`, signed with secret `conduit`) that is automatically sent as a `conduit_session` cookie for testing against `mockapi`.
+
+Leave the host field empty to open a local shell session on the machine running Conduit.
+
+Once connected, the terminal opens at `/terminal` and the session runs until you close the tab or the idle timeout is reached.
+
+> Credentials (address, username, password) are stored only in `hosts.yaml` on the server. The browser only ever sends the device name — never the actual credentials.
 
 ## Configuration
 
@@ -29,8 +41,14 @@ Conduit reads configs from `./conduit.yaml` or `/etc/conduit/conduit.yaml`. Both
 # Resolver to use: "file" (default) or "api"
 resolver: file
 
-# Set to false to prevent local shell sessions
-enable_local_shell: true
+# Demo page
+demo: true
+
+# Local shell session
+local:
+  enable: true
+  # command: "/bin/bash"  # defaults to /bin/login when not set
+  term: xterm-256color
 
 # API resolver settings (only used when resolver: api)
 api:
@@ -48,10 +66,6 @@ A resolver maps the host identifier and username from the browser form to the se
 Reads hosts from `./hosts.yaml` or `/etc/conduit/hosts.yaml`. Both files are merged; the local file wins.
 
 ```yaml
-local:
-  shell: /bin/bash
-  username: ""
-
 hosts:
   myserver:
     address: 192.168.1.10
@@ -68,15 +82,15 @@ On each connection attempt Conduit POSTs a JSON request to the configured URL an
 
 **Request**
 ```json
-{ "type": "ssh", "host": "myserver", "user": "admin" }
+{ "type": "ssh", "host": "myserver" }
 ```
 `type` is `"ssh"` for named hosts and `"local"` for local shell requests.  
-The `Authorization: Bearer <token>` header is included when the browser sends a `conduit_auth` cookie.
+The `Authorization: Bearer <token>` header is included when the browser sends a `conduit_session` cookie.
 
 **Response**
 ```json
 { "type": "ssh", "address": "192.168.1.10", "port": "22", "username": "admin", "password": "" }
-{ "type": "local", "shell": "/bin/bash", "username": "admin" }
+{ "type": "local", "command": "/bin/bash" }
 ```
 
 Enable it in `conduit.yaml`:

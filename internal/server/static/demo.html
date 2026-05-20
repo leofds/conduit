@@ -49,9 +49,7 @@
  ╚██████╗╚██████╔╝██║ ╚████║██████╔╝╚██████╔╝██║   ██║
   ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═════╝  ╚═════╝ ╚═╝   ╚═╝</pre>
     </div>
-    <input id="host"  type="text" placeholder="Host (leave empty for local shell)" autocomplete="off" />
-    <input id="user"  type="text" placeholder="Username (optional)" autocomplete="off" />
-    <input id="token" type="text" placeholder="Token (optional)" autocomplete="off" />
+    <input id="host"  type="text" placeholder="Host (leave empty for local session)" autocomplete="off" />
     <button type="submit">Connect</button>
   </form>
 
@@ -66,14 +64,14 @@
     document.getElementById('form').addEventListener('submit', e => {
       e.preventDefault();
       const host  = document.getElementById('host').value.trim();
-      const user  = document.getElementById('user').value.trim();
-      const token = document.getElementById('token').value.trim();
+
+      // Demo JWT — payload: {"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022}, secret: "conduit"
+      const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.5k9W2IQPDI-Ouq0ipJVRco733kj073sm3_nK3sKaUqw";
       if (token) {
         document.cookie = `conduit_session=${encodeURIComponent(token)}; Path=/; SameSite=Lax; Secure`;
       }
       const paramsObj = {};
       if (host) paramsObj.host = host;
-      if (user) paramsObj.user = user;
       const params = new URLSearchParams(paramsObj);
       const query = params.toString();
       window.location.href = query ? `/terminal?${query}` : '/terminal';

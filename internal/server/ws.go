@@ -31,7 +31,6 @@ func tokenFromCookie(c *gin.Context) string {
 // Session configuration (method, credentials, host, port, shell) is resolved via s.resolver.
 func (s *Server) wsHandler(c *gin.Context) {
 	host := c.Param("host")
-	user := c.Query("user")
 	token := tokenFromCookie(c)
 
 	if host == config.Local && !s.allowLocal {
@@ -40,9 +39,9 @@ func (s *Server) wsHandler(c *gin.Context) {
 		return
 	}
 
-	cfg, err := s.resolver.Resolve(resolver.Request{Host: host, User: user, Token: token})
+	cfg, err := s.resolver.Resolve(resolver.Request{Host: host, Token: token})
 	if err != nil {
-		log.Printf("resolver error host=%s user=%s: %v", host, user, err)
+		log.Printf("resolver error host=%s: %v", host, err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
@@ -65,9 +64,10 @@ func (s *Server) wsHandler(c *gin.Context) {
 		log.Printf("session open  method=ssh user=%s host=%s", sess.Username, sess.Address)
 		defer log.Printf("session close method=ssh user=%s host=%s", sess.Username, sess.Address)
 	case resolver.LocalConfig:
+		sess.Term = s.term
 		runner = sessionlocal.New(sess)
-		log.Printf("session open  method=local user=%s", sess.Username)
-		defer log.Printf("session close method=local user=%s", sess.Username)
+		log.Printf("session open  method=local command=%s", sess.Command)
+		defer log.Printf("session close method=local command=%s", sess.Command)
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported session type"})
 		return

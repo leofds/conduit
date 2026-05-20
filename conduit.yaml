@@ -2,23 +2,35 @@
 # Place this file at ./conduit.yaml (next to the binary) or /etc/conduit/conduit.yaml.
 # When both exist they are merged; entries in ./conduit.yaml override /etc/conduit/conduit.yaml.
 
-# Localhost shell access: set to false to prevent localhost shell sessions
-enable_local_shell: true
-
 # Demo page: set to false to disable the /demo page
 demo: true
+
+# Local shell session
+local:
+  enable: true
+  # command: "/bin/bash"
+  #
+  # Default behaviour when command is not set:
+  #   - Conduit running as root      → /bin/login
+  #   - Conduit running as non-root  → sudo -n /bin/login
+  #                                    (requires the conduit process user to be in sudoers)
+  #
+  # To allow the conduit process user (e.g. conduit) to run /bin/login via sudo,
+  # create /etc/sudoers.d/conduit with:
+  #   conduit ALL=(root) NOPASSWD: /bin/login
+  term: xterm-256color
 
 # Resolver to use: "file" (default) or "api"
 resolver: file
 
 # API resolver configuration (used when resolver: api)
 # The resolver will POST to http://<host>:<port><endpoint> with:
-#   Body:    {"type": "ssh"|"local", "host": "<host>", "user": "<user>"}
-#   Header:  Authorization: Bearer <token>  (only when conduit_auth cookie is present)
+#   Body:    {"type": "ssh"|"local", "host": "<host>"}
+#   Header:  Authorization: Bearer <token>  (only when conduit_session cookie is present)
 #
 # Expected response:
 #   {"type": "ssh",   "address": "...", "port": "22", "username": "...", "password": "..."}
-#   {"type": "local", "shell": "/bin/bash", "username": "..."}
+#   {"type": "local", "command": ""}
 api:
   url: http://localhost:8040/conduit/resolve
   connect_timeout: 5s

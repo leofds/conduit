@@ -27,28 +27,21 @@ type hostEntry struct {
 	Password string `yaml:"password"`
 }
 
-type localEntry struct {
-	Shell    string `yaml:"shell"`
-	Username string `yaml:"username"`
-}
-
 type hostsFile struct {
-	Local *localEntry          `yaml:"local"`
 	Hosts map[string]hostEntry `yaml:"hosts"`
 }
 
 type Resolver struct {
-	local *localEntry
+	local config.LocalShellConfig
 	hosts map[string]hostEntry
 }
 
-func New() (*Resolver, error) {
-	return NewFromPaths(configPaths)
+func New(local config.LocalShellConfig) (*Resolver, error) {
+	return NewFromPaths(configPaths, local)
 }
 
-func NewFromPaths(paths []string) (*Resolver, error) {
+func NewFromPaths(paths []string, local config.LocalShellConfig) (*Resolver, error) {
 	hosts := make(map[string]hostEntry)
-	var local *localEntry
 	for _, path := range paths {
 		data, err := os.ReadFile(path)
 		if err != nil {
@@ -64,12 +57,9 @@ func NewFromPaths(paths []string) (*Resolver, error) {
 		for k, v := range f.Hosts {
 			hosts[k] = v
 		}
-		if f.Local != nil {
-			local = f.Local
-		}
 		log.Printf("fileresolver: loaded %d hosts from %s", len(f.Hosts), path)
 	}
-	if len(hosts) == 0 && local == nil {
+	if len(hosts) == 0 {
 		log.Printf("fileresolver: warning: no config files found (looked in %v)", paths)
 	}
 	return &Resolver{hosts: hosts, local: local}, nil
@@ -77,29 +67,18 @@ func NewFromPaths(paths []string) (*Resolver, error) {
 
 func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error) {
 	if req.Host == config.Local {
-		if r.local == nil {
-			return nil, fmt.Errorf("local session not configured")
-		}
-		username := req.User
-		if username == "" {
-			username = r.local.Username
-		}
-		shell := r.local.Shell
-		if shell == "" {
-			shell = "/bin/bash"
-		}
+		command := r.local.Command
 		return resolver.LocalConfig{
-			Shell:    shell,
-			Username: username,
+			Command: command,
 		}, nil
 	}
 	entry, ok := r.hosts[req.Host]
 	if !ok {
 		return nil, fmt.Errorf("host %q not found", req.Host)
 	}
-	username := req.User
+	username := entry.Username
 	if username == "" {
-		username = entry.Username
+		return nil, fmt.Errorf("username not found for host %q", req.Host)
 	}
 	port := entry.Port
 	if port == "" {

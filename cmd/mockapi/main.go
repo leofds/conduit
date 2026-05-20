@@ -47,7 +47,7 @@ type resolveResponse struct {
 	Port     string `json:"port,omitempty"`
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
-	Shell    string `json:"shell,omitempty"`
+	Command  string `json:"command,omitempty"`
 }
 
 func makeHandler(fr *fileresolver.Resolver) http.HandlerFunc {
@@ -65,9 +65,9 @@ func makeHandler(fr *fileresolver.Resolver) http.HandlerFunc {
 		}
 
 		auth := r.Header.Get("Authorization")
-		log.Printf("mockapi: type=%s host=%s user=%s auth=%q", req.Type, req.Host, req.User, auth)
+		log.Printf("mockapi: type=%s host=%s auth=%q", req.Type, req.Host, auth)
 
-		cfg, err := fr.Resolve(resolver.Request{Host: req.Host, User: req.User})
+		cfg, err := fr.Resolve(resolver.Request{Host: req.Host})
 		if err != nil {
 			log.Printf("mockapi: resolve error: %v", err)
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -86,9 +86,8 @@ func makeHandler(fr *fileresolver.Resolver) http.HandlerFunc {
 			}
 		case resolver.LocalConfig:
 			resp = resolveResponse{
-				Type:     string(config.SessionTypeLocalShell),
-				Shell:    v.Shell,
-				Username: v.Username,
+				Type:    string(config.SessionTypeLocal),
+				Command: v.Command,
 			}
 		}
 
@@ -117,7 +116,7 @@ func main() {
 		}
 	}
 
-	fr, err := fileresolver.NewFromPaths(mockapiHostsPaths)
+	fr, err := fileresolver.NewFromPaths(mockapiHostsPaths, cfg.Local)
 	if err != nil {
 		log.Fatalf("mockapi: load hosts: %v", err)
 	}

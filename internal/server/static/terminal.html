@@ -17,13 +17,9 @@
   <script>
     const params = new URLSearchParams(location.search);
     const host   = params.get('host') || 'local';
-    const user   = params.get('user') || '';
-
-    const wsParams = new URLSearchParams({ host });
-    if (user) wsParams.set('user', user);
 
     const term = new Terminal();
-    const ws = new WebSocket(`ws://${location.host}/ws/${host}?` + wsParams);
+    const ws = new WebSocket(`ws://${location.host}/ws/${host}`);
     ws.binaryType = 'arraybuffer';
 
     term.open(document.getElementById('terminal'));
