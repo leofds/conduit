@@ -43,6 +43,7 @@ type LocalShellConfig struct {
 // Config is the top-level Conduit configuration.
 type Config struct {
 	Resolver ResolverType     `yaml:"resolver"` // "file" (default) or "api"
+	Port     int              `yaml:"port"`     // HTTP listen port (default 8080)
 	Demo     bool             `yaml:"demo"`     // enable the demo page (default true)
 	Local    LocalShellConfig `yaml:"local"`    // local shell session config
 	API      APIConfig        `yaml:"api"`
@@ -53,6 +54,7 @@ type Config struct {
 func Load() (*Config, error) {
 	cfg := &Config{
 		Resolver: ResolverFile,
+		Port:     8080,
 		Demo:     true,
 		Local: LocalShellConfig{
 			Enable: true,

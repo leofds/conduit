@@ -5,6 +5,9 @@
 # Demo page: set to false to disable the /demo page
 demo: true
 
+# HTTP listen port
+port: 8080
+
 # Local shell session
 local:
   enable: true

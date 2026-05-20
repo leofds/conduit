@@ -43,6 +43,9 @@ Conduit reads configs from `./conduit.yaml` or `/etc/conduit/conduit.yaml`. Both
 # Resolver to use: "file" (default) or "api"
 resolver: file
 
+# HTTP listen port
+port: 8080
+
 # Demo page
 demo: true
 

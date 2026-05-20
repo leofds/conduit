@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -48,9 +49,10 @@ func main() {
 	srv.SetDemo(cfg.Demo)
 	srv.SetTerm(cfg.Local.Term)
 
+	addr := fmt.Sprintf(":%d", cfg.Port)
 	go func() {
-		log.Printf("Starting conduit %s on :8080", version.Version)
-		if err := srv.Start(":8080"); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Printf("Starting conduit %s on %s", version.Version, addr)
+		if err := srv.Start(addr); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Server error: %v", err)
 		}
 	}()
