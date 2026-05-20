@@ -58,7 +58,11 @@
       }
 
       term.onResize(({ cols, rows }) => sendResize(cols, rows));
-      window.addEventListener('resize', fitTerminal);
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(fitTerminal, 150);
+      });
 
       ws.onopen    = () => sendResize(term.cols, term.rows);
       ws.onmessage = e => term.write(new Uint8Array(e.data));
