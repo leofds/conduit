@@ -133,6 +133,23 @@ func main() {
 		}
 	}()
 
+	// Handle SIGHUP for hosts file reload (only for file resolver)
+	sighup := make(chan os.Signal, 1)
+	signal.Notify(sighup, syscall.SIGHUP)
+	go func() {
+		for range sighup {
+			if fr, ok := r.(*fileresolver.Resolver); ok {
+				if err := fr.Reload(); err != nil {
+					log.Printf("error reloading hosts: %v", err)
+				} else {
+					log.Printf("hosts reloaded successfully")
+				}
+			} else {
+				log.Printf("SIGHUP received: ignoring (not using file resolver)")
+			}
+		}
+	}()
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

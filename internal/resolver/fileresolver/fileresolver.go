@@ -35,6 +35,7 @@ type hostsFile struct {
 type Resolver struct {
 	local config.LocalShellConfig
 	hosts map[string]hostEntry
+	paths []string
 }
 
 func New(local config.LocalShellConfig) (*Resolver, error) {
@@ -42,18 +43,30 @@ func New(local config.LocalShellConfig) (*Resolver, error) {
 }
 
 func NewFromPaths(paths []string, local config.LocalShellConfig) (*Resolver, error) {
+	resolver := &Resolver{
+		paths: paths,
+		local: local,
+		hosts: make(map[string]hostEntry),
+	}
+	if err := resolver.loadHosts(); err != nil {
+		return nil, err
+	}
+	return resolver, nil
+}
+
+func (r *Resolver) loadHosts() error {
 	hosts := make(map[string]hostEntry)
-	for _, path := range paths {
+	for _, path := range r.paths {
 		data, err := os.ReadFile(path)
 		if err != nil {
 			if os.IsNotExist(err) {
 				continue
 			}
-			return nil, fmt.Errorf("fileresolver: reading %s: %w", path, err)
+			return fmt.Errorf("fileresolver: reading %s: %w", path, err)
 		}
 		var f hostsFile
 		if err := yaml.Unmarshal(data, &f); err != nil {
-			return nil, fmt.Errorf("fileresolver: parsing %s: %w", path, err)
+			return fmt.Errorf("fileresolver: parsing %s: %w", path, err)
 		}
 		for k, v := range f.Hosts {
 			hosts[k] = v
@@ -61,9 +74,15 @@ func NewFromPaths(paths []string, local config.LocalShellConfig) (*Resolver, err
 		log.Printf("fileresolver: loaded %d hosts from %s", len(f.Hosts), path)
 	}
 	if len(hosts) == 0 {
-		log.Printf("fileresolver: warning: no config files found (looked in %v)", paths)
+		log.Printf("fileresolver: warning: no config files found (looked in %v)", r.paths)
 	}
-	return &Resolver{hosts: hosts, local: local}, nil
+	r.hosts = hosts
+	return nil
+}
+
+func (r *Resolver) Reload() error {
+	log.Printf("fileresolver: reloading hosts from %v", r.paths)
+	return r.loadHosts()
 }
 
 func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error) {
