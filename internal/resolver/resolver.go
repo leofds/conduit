@@ -30,8 +30,9 @@ func (SSHConfig) isSessionConfig() {}
 type LocalConfig struct {
 	Command     string
 	Term        string
-	WorkingDir  *string        // per-session override; nil = use global default
-	IdleTimeout *time.Duration // per-session override; nil = use global default
+	WorkingDir  *string           // per-session override; nil = use global default
+	IdleTimeout *time.Duration    // per-session override; nil = use global default
+	Env         map[string]string // additional environment variables for the local session
 }
 
 func (LocalConfig) isSessionConfig() {}

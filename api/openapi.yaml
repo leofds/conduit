@@ -202,3 +202,11 @@ components:
             `"10m"`, `"30s"`).  Omit to fall back to the global `local.idle_timeout`
             setting in conduit.yaml.
           example: "10m"
+        env:
+          type: object
+          description: Environment variables to set for the local shell session.
+          additionalProperties:
+            type: string
+          example:
+            LANG: en_US.UTF-8
+            TZ: UTC

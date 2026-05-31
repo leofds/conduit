@@ -48,6 +48,9 @@ Conduit reads configs from `./conduit.yaml` or `/etc/conduit/conduit.yaml`. Both
 # Demo page
 demo: true
 
+# Allow local shell sessions
+allow_local_shell: true
+
 # HTTP listen port
 port: 8080
 
@@ -64,6 +67,10 @@ local:
   command: "/bin/bash"
   term: xterm-256color  # terminal type reported to the local shell
   idle_timeout: 10m     # 0 disables the timeout
+  env:
+    LANG: en_US.UTF-8
+    TZ: UTC
+    PATH: /usr/local/bin:/usr/bin:/bin
 
 # SSH session
 ssh:
@@ -96,6 +103,8 @@ To grant sudo access for a user named `conduit`, run as root:
   echo "conduit ALL=(root) NOPASSWD: /bin/login" | sudo tee /etc/sudoers.d/conduit
   ```
   Replace `conduit` with the user running the conduit process.
+
+- **`env`**: additional environment variables injected into every local shell session, such as `LANG`, `TZ`, or a custom `PATH`.
 
 ## Resolvers
 
@@ -139,12 +148,19 @@ Request:
 Response:
 ```json
 {
-  "address": "192.168.1.10", "port": "22", "username": "admin",
-  "password": "", "private_key_file": "",
+  "address": "192.168.1.10",
+  "port": "22",
+  "username": "admin",
+  "password": "",
+  "private_key_file": "",
   "term": "xterm-256color",
-  "env": {"LANG": "en_US.UTF-8"},
-  "verify_host_key": true, "tofu_auto_accept": false,
-  "idle_timeout": "10m", "keepalive_interval": "30s"
+  "verify_host_key": true,
+  "tofu_auto_accept": false,
+  "idle_timeout": "10m",
+  "keepalive_interval": "30s",
+  "env": {
+    "LANG": "en_US.UTF-8"
+  }
 }
 ```
 
@@ -157,10 +173,20 @@ All fields except `address` and `username` are optional — omit any to fall bac
 Request: *(no body)*
 Response:
 ```json
-{ "command": "/bin/bash", "term": "xterm-256color", "working_dir": "/home/user", "idle_timeout": "10m" }
+{
+  "command": "/bin/bash",
+  "term": "xterm-256color",
+  "working_dir": "/home/user",
+  "idle_timeout": "10m",
+  "env": {
+    "LANG": "en_US.UTF-8"
+  }
+}
 ```
 
-`term`, `working_dir` and `idle_timeout` are optional — omit any to fall back to the corresponding `local.term` / `local.working_dir` / `local.idle_timeout` setting in `conduit.yaml`.
+`term`, `working_dir`, `idle_timeout`, and `env` are optional — omit any to fall back to the corresponding `local.term` / `local.working_dir` / `local.idle_timeout` / `local.env` setting in `conduit.yaml`.
+
+Local shell sessions also inherit any `local.env` values configured in `conduit.yaml`.
 
 The `Authorization: Bearer <token>` header is included on both requests when the browser sends a `conduit_session` cookie.
 

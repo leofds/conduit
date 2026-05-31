@@ -102,6 +102,7 @@ func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error)
 			Term:        r.local.Term,
 			WorkingDir:  workingDir,
 			IdleTimeout: idleTimeout,
+			Env:         r.local.Env,
 		}, nil
 	}
 	entry, ok := r.hosts[req.Host]

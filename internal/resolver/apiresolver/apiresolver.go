@@ -80,10 +80,11 @@ type sshResponseBody struct {
 
 // localResponseBody is the JSON payload returned by the /local endpoint.
 type localResponseBody struct {
-	Command     string  `json:"command"`
-	Term        string  `json:"term,omitempty"`         // per-session override; omit to use global default
-	WorkingDir  *string `json:"working_dir,omitempty"`  // absolute path; omit to use global default
-	IdleTimeout *string `json:"idle_timeout,omitempty"` // Go duration string, e.g. "10m"; omit to use global default
+	Command     string            `json:"command"`
+	Term        string            `json:"term,omitempty"`         // per-session override; omit to use global default
+	WorkingDir  *string           `json:"working_dir,omitempty"`  // absolute path; omit to use global default
+	IdleTimeout *string           `json:"idle_timeout,omitempty"` // Go duration string, e.g. "10m"; omit to use global default
+	Env         map[string]string `json:"env,omitempty"`
 }
 
 func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error) {
@@ -148,6 +149,7 @@ func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error)
 			Term:        result.Term,
 			WorkingDir:  result.WorkingDir,
 			IdleTimeout: idleTimeout,
+			Env:         result.Env,
 		}, nil
 	}
 

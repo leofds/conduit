@@ -28,7 +28,7 @@ type APIConfig struct {
 
 // SSHConfig holds session-level parameters for SSH connections.
 type SSHConfig struct {
-	Term              string        `yaml:"term"`             // terminal type for SSH sessions (default xterm-256color)
+	Term              string        `yaml:"term"` // terminal type for SSH sessions (default xterm-256color)
 	IdleTimeout       time.Duration `yaml:"idle_timeout"`
 	KeepaliveInterval time.Duration `yaml:"keepalive_interval"`
 	DialTimeout       time.Duration `yaml:"dial_timeout"`
@@ -39,33 +39,34 @@ type SSHConfig struct {
 
 // LocalShellConfig holds shell parameters for local sessions.
 type LocalShellConfig struct {
-	Enable      bool          `yaml:"enable"`
-	Command     string        `yaml:"command"`
-	Term        string        `yaml:"term"`         // terminal type for local sessions (default xterm-256color)
-	WorkingDir  string        `yaml:"working_dir"` // working directory for local sessions; empty = inherit conduit's cwd
-	IdleTimeout time.Duration `yaml:"idle_timeout"`
+	Command     string            `yaml:"command"`
+	Term        string            `yaml:"term"`        // terminal type for local sessions (default xterm-256color)
+	WorkingDir  string            `yaml:"working_dir"` // working directory for local sessions; empty = inherit conduit's cwd
+	IdleTimeout time.Duration     `yaml:"idle_timeout"`
+	Env         map[string]string `yaml:"env"`
 }
 
 // Config is the top-level Conduit configuration.
 type Config struct {
-	Resolver       ResolverType     `yaml:"resolver"`        // "file" (default) or "api"
-	Port           int              `yaml:"port"`            // HTTP listen port (default 8080)
-	Demo           bool             `yaml:"demo"`            // enable the demo page (default true)
-	AllowedOrigins []string         `yaml:"allowed_origins"` // WebSocket origin allowlist; empty = allow all
-	Local          LocalShellConfig `yaml:"local"`           // local shell session config
-	API            APIConfig        `yaml:"api"`
-	SSH            SSHConfig        `yaml:"ssh"`
+	Resolver        ResolverType     `yaml:"resolver"`          // "file" (default) or "api"
+	Port            int              `yaml:"port"`              // HTTP listen port (default 8080)
+	Demo            bool             `yaml:"demo"`              // enable the demo page (default true)
+	AllowLocalShell bool             `yaml:"allow_local_shell"` // enable local shell sessions
+	AllowedOrigins  []string         `yaml:"allowed_origins"`   // WebSocket origin allowlist; empty = allow all
+	Local           LocalShellConfig `yaml:"local"`             // local shell session config
+	API             APIConfig        `yaml:"api"`
+	SSH             SSHConfig        `yaml:"ssh"`
 }
 
 // Load reads conduit.yaml from the standard paths and returns the merged config.
 // Missing files are silently skipped. Returns a default config if none are found.
 func Load() (*Config, error) {
 	cfg := &Config{
-		Resolver: ResolverFile,
-		Port:     8080,
-		Demo:     true,
+		Resolver:        ResolverFile,
+		Port:            8080,
+		Demo:            true,
+		AllowLocalShell: true,
 		Local: LocalShellConfig{
-			Enable:      true,
 			Command:     "/bin/bash",
 			Term:        "xterm-256color",
 			IdleTimeout: 10 * time.Minute,

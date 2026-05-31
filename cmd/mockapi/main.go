@@ -58,10 +58,11 @@ type sshResponse struct {
 }
 
 type localResponse struct {
-	Command     string  `json:"command,omitempty"`
-	Term        string  `json:"term,omitempty"`
-	WorkingDir  *string `json:"working_dir,omitempty"`
-	IdleTimeout *string `json:"idle_timeout,omitempty"`
+	Command     string            `json:"command,omitempty"`
+	Term        string            `json:"term,omitempty"`
+	WorkingDir  *string           `json:"working_dir,omitempty"`
+	IdleTimeout *string           `json:"idle_timeout,omitempty"`
+	Env         map[string]string `json:"env,omitempty"`
 }
 
 // validateBody reads r.Body, validates its JSON against the named schema in doc,
@@ -170,6 +171,7 @@ func makeLocalHandler(doc *openapi3.T, fr *fileresolver.Resolver) http.HandlerFu
 			Command:    v.Command,
 			Term:       v.Term,
 			WorkingDir: v.WorkingDir,
+			Env:        v.Env,
 		}
 		if v.IdleTimeout != nil {
 			s := v.IdleTimeout.String()

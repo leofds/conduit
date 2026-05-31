@@ -28,6 +28,7 @@ type Server struct {
 	sshCfg           config.SSHConfig
 	localIdleTimeout time.Duration
 	localWorkingDir  string
+	localEnv         map[string]string
 	allowedOrigins   []string
 	knownHosts       *knownhosts.Store
 }
@@ -80,6 +81,11 @@ func (s *Server) SetLocalIdleTimeout(d time.Duration) {
 // An empty string means the session inherits conduit's working directory.
 func (s *Server) SetLocalWorkingDir(dir string) {
 	s.localWorkingDir = dir
+}
+
+// SetLocalEnv sets environment variables that are injected into every local shell session.
+func (s *Server) SetLocalEnv(env map[string]string) {
+	s.localEnv = env
 }
 
 // SetAllowedOrigins sets the WebSocket Origin allowlist.

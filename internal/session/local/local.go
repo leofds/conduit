@@ -20,6 +20,7 @@ import (
 type Config struct {
 	WorkingDir  string
 	IdleTimeout time.Duration
+	Env         map[string]string
 }
 
 type Runner struct {
@@ -29,6 +30,7 @@ type Runner struct {
 	cols        uint16
 	rows        uint16
 	idleTimeout time.Duration
+	env         map[string]string
 }
 
 func New(cfg resolver.LocalConfig, localCfg Config, cols, rows uint16) *Runner {
@@ -42,7 +44,15 @@ func New(cfg resolver.LocalConfig, localCfg Config, cols, rows uint16) *Runner {
 	if rows == 0 {
 		rows = 24
 	}
-	return &Runner{command: cfg.Command, workingDir: localCfg.WorkingDir, term: term, cols: cols, rows: rows, idleTimeout: localCfg.IdleTimeout}
+	return &Runner{
+		command:     cfg.Command,
+		workingDir:  localCfg.WorkingDir,
+		term:        term,
+		cols:        cols,
+		rows:        rows,
+		idleTimeout: localCfg.IdleTimeout,
+		env:         localCfg.Env,
+	}
 }
 
 func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
@@ -64,7 +74,11 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 	} else {
 		cmd = exec.CommandContext(ctx, "sudo", "-n", "/bin/login")
 	}
-	cmd.Env = append(os.Environ(), "TERM="+r.term)
+	cmd.Env = os.Environ()
+	for k, v := range r.env {
+		cmd.Env = append(cmd.Env, k+"="+v)
+	}
+	cmd.Env = append(cmd.Env, "TERM="+r.term)
 	if r.workingDir != "" {
 		cmd.Dir = r.workingDir
 	}

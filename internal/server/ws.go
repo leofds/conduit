@@ -31,7 +31,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 	rows := parseUint16(c.Query("rows"), 24)
 
 	if host == config.Local && !s.allowLocal {
-		log.Printf("local shell session blocked (enable_local_shell=false)")
+		log.Printf("local shell session blocked (allow_local_shell=false)")
 		c.JSON(http.StatusForbidden, gin.H{"error": "local shell sessions are disabled"})
 		return
 	}
@@ -106,9 +106,17 @@ func (s *Server) wsHandler(c *gin.Context) {
 		if sess.WorkingDir != nil {
 			localWorkingDir = *sess.WorkingDir
 		}
+		localEnv := make(map[string]string, len(s.localEnv)+len(sess.Env))
+		for k, v := range s.localEnv {
+			localEnv[k] = v
+		}
+		for k, v := range sess.Env {
+			localEnv[k] = v
+		}
 		runner = sessionlocal.New(sess, sessionlocal.Config{
 			WorkingDir:  localWorkingDir,
 			IdleTimeout: localIdleTimeout,
+			Env:         localEnv,
 		}, cols, rows)
 		log.Printf("session open  method=local command=%s", sess.Command)
 		defer log.Printf("session close method=local command=%s", sess.Command)

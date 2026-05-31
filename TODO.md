@@ -36,10 +36,6 @@
 - **Run as a specific user** — Set `cmd.SysProcAttr = &syscall.SysProcAttr{Credential: &syscall.Credential{Uid, Gid}}`
   to run the shell as a configured user/group without requiring full `sudo`.
 
-- **Extra environment variables** — Only `TERM` is injected. Add an `env` list in
-  `conduit.yaml` under `local` so operators can pass additional variables (e.g. `LANG`, `TZ`,
-  `PATH` overrides) to every local session.
-
 - **Graceful shutdown** — `exec.CommandContext` sends `SIGKILL` immediately when the context
   is cancelled (idle timeout, WebSocket close). Send `SIGTERM` first, wait briefly, then
   `SIGKILL` to allow the shell to clean up.

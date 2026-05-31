@@ -5,6 +5,9 @@
 # Demo page: set to false to disable the /demo page
 demo: true
 
+# Allow local shell sessions
+allow_local_shell: true
+
 # HTTP listen port
 port: 8080
 
@@ -19,7 +22,6 @@ port: 8080
 
 # Local shell session
 local:
-  enable: true
   # command sets the program launched when a local session is requested.
   #
   # Option 1: Direct shell (simplest, no login prompt)
@@ -35,6 +37,11 @@ local:
   # Leave empty (or omit) to inherit conduit's working directory (the binary's directory).
   working_dir: ""
   idle_timeout: 10m  # close session after this period of inactivity, 0 disables the timeout
+  # env defines additional environment variables injected into every local session.
+  env:
+    LANG: en_US.UTF-8
+    #TZ: UTC
+    #PATH: /usr/local/bin:/usr/bin:/bin
 
 # SSH session
 ssh:

@@ -110,9 +110,10 @@ func main() {
 	}
 
 	srv := server.New(r)
-	srv.SetAllowLocal(cfg.Local.Enable)
+	srv.SetAllowLocal(cfg.AllowLocalShell)
 	srv.SetLocalIdleTimeout(cfg.Local.IdleTimeout)
 	srv.SetLocalWorkingDir(cfg.Local.WorkingDir)
+	srv.SetLocalEnv(cfg.Local.Env)
 	srv.SetLocalTerm(cfg.Local.Term)
 	srv.SetDemo(cfg.Demo)
 	srv.SetSSHConfig(cfg.SSH)
