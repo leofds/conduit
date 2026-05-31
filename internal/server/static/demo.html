@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conduit</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; background: #1e1e1e; color: #ccc; font-family: monospace; }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 10px;
+    }
+    input {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #eee;
+      padding: 6px 10px;
+      font-family: monospace;
+      font-size: 14px;
+      width: 300px;
+    }
+    button {
+      background: #3a7bd5;
+      border: none;
+      color: #fff;
+      padding: 7px 0;
+      font-family: monospace;
+      font-size: 14px;
+      cursor: pointer;
+      width: 300px;
+    }
+    button:hover { background: #2e64b8; }
+  </style>
+</head>
+<body>
+  <form id="form">
+    <div style="margin-bottom:16px; text-align:center;">
+      <pre style="color:#3a7bd5; line-height:1.2; display:inline-block; text-align:left;">
+  ██████╗ ██████╗ ███╗   ██╗██████╗ ██╗   ██╗██╗████████╗
+ ██╔════╝██╔═══██╗████╗  ██║██╔══██╗██║   ██║██║╚══██╔══╝
+ ██║     ██║   ██║██╔██╗ ██║██║  ██║██║   ██║██║   ██║
+ ██║     ██║   ██║██║╚██╗██║██║  ██║██║   ██║██║   ██║
+ ╚██████╗╚██████╔╝██║ ╚████║██████╔╝╚██████╔╝██║   ██║
+  ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═════╝  ╚═════╝ ╚═╝   ╚═╝</pre>
+    </div>
+    <input id="host"  type="text" placeholder="Host (leave empty for local session)" autocomplete="off" />
+    <button type="submit">Connect</button>
+  </form>
+
+  <footer style="position:fixed; bottom:16px; width:100%; text-align:center; font-size:12px; color:#555;">
+    by Leonardo Fernandes &mdash;
+    <a href="https://github.com/leofds/conduit" target="_blank" style="color:#555; text-decoration:none;">
+      github.com/leofds/conduit
+    </a>
+  </footer>
+
+  <script>
+    document.getElementById('form').addEventListener('submit', e => {
+      e.preventDefault();
+      const host  = document.getElementById('host').value.trim();
+
+      // Demo JWT — payload: {"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022}, secret: "conduit"
+      const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.5k9W2IQPDI-Ouq0ipJVRco733kj073sm3_nK3sKaUqw";
+      if (token) {
+        document.cookie = `conduit_session=${encodeURIComponent(token)}; Path=/; SameSite=Lax; Secure`;
+      }
+      const paramsObj = {};
+      if (host) paramsObj.host = host;
+      const params = new URLSearchParams(paramsObj);
+      const query = params.toString();
+      window.location.href = query ? `/terminal?${query}` : '/terminal';
+    });
+  </script>
+</body>
+</html>

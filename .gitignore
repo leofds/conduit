@@ -1,5 +1,4 @@
 # Binaries
-conduit
 *.exe
 
 # Build output
@@ -16,3 +15,9 @@ vendor/
 
 # Dev only
 _dev/
+
+# Application
+/conduit
+/known_hosts.yaml
+/conduit.yaml
+/hosts.yaml

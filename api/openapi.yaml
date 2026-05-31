@@ -1,0 +1,204 @@
+openapi: "3.1.0"
+
+info:
+  title: Conduit API Resolver
+  version: "1.0"
+  description: |
+    Contract that an external backend must implement when `resolver: api` is
+    configured in conduit.yaml.
+
+    Conduit calls these two endpoints to resolve a session configuration for
+    each incoming terminal connection.  Implement them in your own backend to
+    integrate Conduit with your authentication and authorisation system.
+
+servers:
+  - url: "{url}"
+    description: Base URL configured under `api.url` in conduit.yaml
+    variables:
+      url:
+        default: http://localhost:8040/conduit/resolve
+
+security:
+  - BearerAuth: []
+
+paths:
+  /ssh:
+    post:
+      summary: Resolve an SSH host
+      description: |
+        Called when the client requests an SSH session.  Return the connection
+        parameters Conduit should use to open the SSH connection.
+
+        The `Authorization` header is forwarded only when the client has a
+        valid `conduit_session` cookie.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SSHRequest"
+            example:
+              host: myserver
+      responses:
+        "200":
+          description: SSH connection parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SSHResponse"
+              example:
+                address: 192.168.1.10
+                port: "22"
+                username: admin
+                password: ""
+                private_key_file: /home/user/.ssh/id_rsa
+                env:
+                  LANG: en_US.UTF-8
+                tofu_auto_accept: false
+        "401":
+          description: Missing or invalid bearer token
+        "403":
+          description: Token valid but not authorised for this host
+
+  /local:
+    post:
+      summary: Resolve a local shell session
+      description: |
+        Called when the client requests a local terminal session.  Return the
+        command Conduit should execute.
+
+        The `Authorization` header is forwarded only when the client has a
+        valid `conduit_session` cookie.
+      responses:
+        "200":
+          description: Local session parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocalResponse"
+              example:
+                command: /bin/bash
+        "401":
+          description: Missing or invalid bearer token
+        "403":
+          description: Token valid but not authorised for a local session
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Value of the `conduit_session` cookie forwarded by Conduit
+
+  schemas:
+    SSHRequest:
+      type: object
+      required:
+        - host
+      properties:
+        host:
+          type: string
+          description: Host identifier as requested by the client
+          example: myserver
+
+    SSHResponse:
+      type: object
+      required:
+        - address
+        - username
+      properties:
+        address:
+          type: string
+          description: Hostname or IP address of the SSH server
+          example: 192.168.1.10
+        port:
+          type: string
+          description: SSH port (defaults to "22" when omitted)
+          default: "22"
+          example: "22"
+        username:
+          type: string
+          description: SSH username
+          example: admin
+        password:
+          type: string
+          description: Password for password-based authentication; omit or leave empty when using a private key
+          example: ""
+        private_key_file:
+          type: string
+          description: Absolute path to a PEM private key file on the Conduit server; omit when using password auth
+          example: /home/user/.ssh/id_rsa
+        term:
+          type: string
+          description: |
+            Per-host override for the terminal type (e.g. `"vt100"`, `"xterm-256color"`).
+            Omit to fall back to the global `term` setting in conduit.yaml.
+          example: xterm-256color
+        env:
+          type: object
+          description: Environment variables to set in the remote SSH session
+          additionalProperties:
+            type: string
+          example:
+            LANG: en_US.UTF-8
+        tofu_auto_accept:
+          type: boolean
+          description: |
+            Per-host override for TOFU auto-accept.  When `true`, Conduit skips
+            the interactive fingerprint confirmation prompt for this host.
+            Omit to fall back to the global `tofu_auto_accept` setting in
+            conduit.yaml.
+          example: false
+        verify_host_key:
+          type: boolean
+          description: |
+            Per-host override for host key verification.  Omit to fall back to
+            the global `verify_host_key` setting in conduit.yaml.
+          example: true
+        idle_timeout:
+          type: string
+          pattern: '^[0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)$'
+          description: |
+            Per-host override for the idle timeout.  Go duration string (e.g.
+            `"10m"`, `"30s"`).  Omit to fall back to the global `idle_timeout`
+            setting in conduit.yaml.
+          example: "10m"
+        keepalive_interval:
+          type: string
+          pattern: '^[0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)$'
+          description: |
+            Per-host override for the keepalive interval.  Go duration string
+            (e.g. `"30s"`, `"1m"`).  Omit to fall back to the global
+            `keepalive_interval` setting in conduit.yaml.
+          example: "30s"
+
+    LocalResponse:
+      type: object
+      required:
+        - command
+      properties:
+        command:
+          type: string
+          description: Shell command to execute for the local session
+          example: /bin/bash
+        term:
+          type: string
+          description: |
+            Per-session override for the terminal type (e.g. `"vt100"`, `"xterm-256color"`).
+            Omit to fall back to the global `term` setting in conduit.yaml.
+          example: xterm-256color
+        working_dir:
+          type: string
+          description: |
+            Per-session override for the working directory.  Absolute path on
+            the Conduit server.  Omit to fall back to the global
+            `local.working_dir` setting in conduit.yaml.
+          example: /home/user
+        idle_timeout:
+          type: string
+          pattern: '^[0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)$'
+          description: |
+            Per-session override for the idle timeout.  Go duration string (e.g.
+            `"10m"`, `"30s"`).  Omit to fall back to the global `local.idle_timeout`
+            setting in conduit.yaml.
+          example: "10m"

@@ -1,0 +1,154 @@
+package server
+
+import (
+	"log"
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+
+	"github.com/leofds/conduit/internal/config"
+	"github.com/leofds/conduit/internal/resolver"
+	"github.com/leofds/conduit/internal/session"
+	sessionlocal "github.com/leofds/conduit/internal/session/local"
+	sessionssh "github.com/leofds/conduit/internal/session/ssh"
+)
+
+// tokenFromCookie returns the value of the conduit_auth cookie, or empty string if absent.
+func tokenFromCookie(c *gin.Context) string {
+	token, _ := c.Cookie("conduit_session")
+	return token
+}
+
+// wsHandler upgrades the connection to WebSocket and dispatches to the appropriate session runner.
+// Session configuration (method, credentials, host, port, shell) is resolved via s.resolver.
+func (s *Server) wsHandler(c *gin.Context) {
+	host := c.Param("host")
+	token := tokenFromCookie(c)
+
+	cols := parseUint16(c.Query("cols"), 80)
+	rows := parseUint16(c.Query("rows"), 24)
+
+	if host == config.Local && !s.allowLocal {
+		log.Printf("local shell session blocked (enable_local_shell=false)")
+		c.JSON(http.StatusForbidden, gin.H{"error": "local shell sessions are disabled"})
+		return
+	}
+
+	cfg, err := s.resolver.Resolve(resolver.Request{Host: host, Token: token})
+	if err != nil {
+		log.Printf("resolver error host=%s: %v", host, err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Clear the token cookie now that it has been consumed.
+	if token != "" {
+		http.SetCookie(c.Writer, &http.Cookie{
+			Name:     "conduit_session",
+			Value:    "",
+			Path:     "/",
+			MaxAge:   -1,
+			SameSite: http.SameSiteLaxMode,
+		})
+	}
+
+	var runner session.Runner
+	switch sess := cfg.(type) {
+	case resolver.SSHConfig:
+		if sess.Term == "" {
+			sess.Term = s.sshTerm
+		}
+		verifyHostKey := s.sshCfg.VerifyHostKey
+		if sess.VerifyHostKey != nil {
+			verifyHostKey = *sess.VerifyHostKey
+		}
+		idleTimeout := s.sshCfg.IdleTimeout
+		if sess.IdleTimeout != nil {
+			idleTimeout = *sess.IdleTimeout
+		}
+		keepaliveInterval := s.sshCfg.KeepaliveInterval
+		if sess.KeepaliveInterval != nil {
+			keepaliveInterval = *sess.KeepaliveInterval
+		}
+		knownFP := ""
+		var saveHostKey func(string) error
+		if verifyHostKey && s.knownHosts != nil {
+			knownFP = s.knownHosts.Get(host)
+			saveHostKey = func(fp string) error { return s.knownHosts.Set(host, fp) }
+		}
+		tofuAutoAccept := s.sshCfg.TOFUAutoAccept
+		if sess.TOFUAutoAccept != nil {
+			// Per-host override for tofu_auto_accept takes precedence over the global config.
+			tofuAutoAccept = *sess.TOFUAutoAccept
+		}
+		runner = sessionssh.New(sess, sessionssh.Config{
+			IdleTimeout:       idleTimeout,
+			KeepaliveInterval: keepaliveInterval,
+			DialTimeout:       s.sshCfg.DialTimeout,
+			VerifyHostKey:     verifyHostKey,
+			TOFUAutoAccept:    tofuAutoAccept,
+			KnownFingerprint:  knownFP,
+			SaveHostKey:       saveHostKey,
+		}, cols, rows)
+		log.Printf("session open  method=ssh user=%s host=%s", sess.Username, sess.Address)
+		defer log.Printf("session close method=ssh user=%s host=%s", sess.Username, sess.Address)
+	case resolver.LocalConfig:
+		if sess.Term == "" {
+			sess.Term = s.localTerm
+		}
+		localIdleTimeout := s.localIdleTimeout
+		if sess.IdleTimeout != nil {
+			localIdleTimeout = *sess.IdleTimeout
+		}
+		localWorkingDir := s.localWorkingDir
+		if sess.WorkingDir != nil {
+			localWorkingDir = *sess.WorkingDir
+		}
+		runner = sessionlocal.New(sess, sessionlocal.Config{
+			WorkingDir:  localWorkingDir,
+			IdleTimeout: localIdleTimeout,
+		}, cols, rows)
+		log.Printf("session open  method=local command=%s", sess.Command)
+		defer log.Printf("session close method=local command=%s", sess.Command)
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported session type"})
+		return
+	}
+
+	upgrader := websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			if len(s.allowedOrigins) == 0 {
+				return true
+			}
+			origin := r.Header.Get("Origin")
+			for _, allowed := range s.allowedOrigins {
+				if origin == allowed {
+					return true
+				}
+			}
+			return false
+		},
+	}
+
+	wsConn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Printf("websocket upgrade error: %v", err)
+		return
+	}
+	defer func() { _ = wsConn.Close() }()
+
+	runner.Run(c.Request.Context(), wsConn)
+}
+
+func parseUint16(s string, def uint16) uint16 {
+	if s == "" {
+		return def
+	}
+	n, err := strconv.ParseUint(s, 10, 16)
+	if err != nil {
+		return def
+	}
+	return uint16(n)
+}

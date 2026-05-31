@@ -1,0 +1,57 @@
+# Conduit main configuration
+# Place this file at ./conduit.yaml (next to the binary) or /etc/conduit/conduit.yaml.
+# When both exist they are merged; entries in ./conduit.yaml override /etc/conduit/conduit.yaml.
+
+# Demo page: set to false to disable the /demo page
+demo: true
+
+# HTTP listen port
+port: 8080
+
+# WebSocket origin allowlist — restrict which pages may open a terminal.
+# List the exact Origins (scheme + host + port) that are permitted.
+# Leave empty (or omit) to allow all origins; suitable when running behind a
+# reverse proxy that already enforces access control.
+#
+# allowed_origins:
+#   - http://localhost:8080
+#   - https://myapp.example.com
+
+# Local shell session
+local:
+  enable: true
+  # command sets the program launched when a local session is requested.
+  #
+  # Option 1: Direct shell (simplest, no login prompt)
+  # Default "/bin/bash" opens a shell as the user running the conduit process. No password required.
+  #
+  # Option 2: Login shell (multi-user, shows a login prompt)
+  # Requires conduit to run as root, or the process user to be granted sudo for /bin/login.
+  # To grant sudo access for a user named conduit, run as root:
+  #   echo "conduit ALL=(root) NOPASSWD: /bin/login" > /etc/sudoers.d/conduit
+  command: "/bin/bash"
+  term: xterm-256color       # terminal type reported to the local shell
+  # working_dir sets the working directory for local shell sessions.
+  # Leave empty (or omit) to inherit conduit's working directory (the binary's directory).
+  working_dir: ""
+  idle_timeout: 10m  # close session after this period of inactivity, 0 disables the timeout
+
+# SSH session
+ssh:
+  term: xterm-256color     # terminal type requested in the SSH PTY
+  idle_timeout: 10m        # close session after this period of inactivity, 0 disables the timeout
+  keepalive_interval: 30s  # how often to send a keepalive probe to the server, 0 disables keepalives
+  dial_timeout: 10s        # TCP+SSH handshake timeout, 0 means no timeout
+  verify_host_key: true    # enable TOFU host key verification for all SSH connections
+  tofu_auto_accept: false  # skip the interactive fingerprint prompt and auto-accept unknown host keys
+  known_hosts_file: ./known_hosts.yaml  # TOFU host-key fingerprint store
+
+# Resolver to use: "file" (default) or "api"
+resolver: file
+
+# API resolver configuration (used when resolver: api)
+# See api/openapi.yaml for the full endpoint contract.
+api:
+  url: http://localhost:8040/conduit/resolve
+  connect_timeout: 5s
+  response_timeout: 10s
