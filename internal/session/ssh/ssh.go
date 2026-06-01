@@ -13,15 +13,21 @@ import (
 	"github.com/gorilla/websocket"
 	gossh "golang.org/x/crypto/ssh"
 
-	"github.com/leofds/conduit/internal/resolver"
 	"github.com/leofds/conduit/internal/session"
 )
 
 // Config holds session-level parameters for SSH connections.
 type Config struct {
-	IdleTimeout       time.Duration
-	KeepaliveInterval time.Duration
-	DialTimeout       time.Duration
+	Address           string             // host or IP address
+	Port              string             // TCP port
+	Username          string             // SSH username
+	Password          string             // SSH password (optional if using key-based auth)
+	PrivateKeyFile    string             // path to private key file (optional if using password)
+	Env               map[string]string  // environment variables to set in the session
+	Term              string             // terminal type (e.g. "xterm-256color")
+	IdleTimeout       time.Duration      // duration of inactivity before auto-closing the session; 0 = no timeout
+	KeepaliveInterval time.Duration      // interval for sending SSH keepalive messages; 0 = disable
+	DialTimeout       time.Duration      // timeout for establishing the SSH connection
 	VerifyHostKey     bool               // enable TOFU host key verification
 	TOFUAutoAccept    bool               // skip the interactive prompt and auto-accept unknown fingerprints
 	KnownFingerprint  string             // expected SHA256 fingerprint; empty = first-use (TOFU)
@@ -29,50 +35,18 @@ type Config struct {
 }
 
 type Runner struct {
-	addr              string // host:port
-	user              string
-	pass              string
-	privateKeyFile    string
-	env               map[string]string
-	term              string
-	cols              uint16
-	rows              uint16
-	idleTimeout       time.Duration
-	keepaliveInterval time.Duration
-	dialTimeout       time.Duration
-	verifyHostKey     bool
-	tofuAutoAccept    bool
-	knownFingerprint  string
-	saveHostKey       func(string) error
+	addr string
+	cfg  Config
+	rows uint16
+	cols uint16
 }
 
-func New(cfg resolver.SSHConfig, sshCfg Config, cols, rows uint16) *Runner {
-	term := cfg.Term
-	if term == "" {
-		term = "xterm-256color"
-	}
-	if cols == 0 {
-		cols = 80
-	}
-	if rows == 0 {
-		rows = 24
-	}
+func New(sshCfg Config, cols, rows uint16) *Runner {
 	return &Runner{
-		addr:              fmt.Sprintf("%s:%s", cfg.Address, cfg.Port),
-		user:              cfg.Username,
-		pass:              cfg.Password,
-		privateKeyFile:    cfg.PrivateKeyFile,
-		env:               cfg.Env,
-		term:              term,
-		cols:              cols,
-		rows:              rows,
-		idleTimeout:       sshCfg.IdleTimeout,
-		keepaliveInterval: sshCfg.KeepaliveInterval,
-		dialTimeout:       sshCfg.DialTimeout,
-		verifyHostKey:     sshCfg.VerifyHostKey,
-		tofuAutoAccept:    sshCfg.TOFUAutoAccept,
-		knownFingerprint:  sshCfg.KnownFingerprint,
-		saveHostKey:       sshCfg.SaveHostKey,
+		addr: fmt.Sprintf("%s:%s", sshCfg.Address, sshCfg.Port),
+		cfg:  sshCfg,
+		cols: cols,
+		rows: rows,
 	}
 }
 
@@ -92,7 +66,7 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 	}
 
 	cfg := &gossh.ClientConfig{
-		User: r.user,
+		User: r.cfg.Username,
 		Auth: []gossh.AuthMethod{},
 		BannerCallback: func(message string) error {
 			normalized := strings.ReplaceAll(strings.ReplaceAll(message, "\r\n", "\n"), "\n", "\r\n")
@@ -100,14 +74,14 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 			return nil
 		},
 		HostKeyCallback: gossh.InsecureIgnoreHostKey(), //nolint:gosec
-		Timeout:         r.dialTimeout,
+		Timeout:         r.cfg.DialTimeout,
 	}
 
-	if r.verifyHostKey {
+	if r.cfg.VerifyHostKey {
 		cfg.HostKeyCallback = func(hostname string, _ net.Addr, key gossh.PublicKey) error {
 			actual := gossh.FingerprintSHA256(key)
-			if r.knownFingerprint == "" {
-				if r.tofuAutoAccept {
+			if r.cfg.KnownFingerprint == "" {
+				if r.cfg.TOFUAutoAccept {
 					// Auto-accept: trust and persist without prompting.
 					log.Printf("SSH TOFU: auto-accepting %s with fingerprint %s", hostname, actual)
 				} else {
@@ -127,15 +101,15 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 					}
 					log.Printf("SSH TOFU: trusting %s with fingerprint %s", hostname, actual)
 				}
-				if r.saveHostKey != nil {
-					if err := r.saveHostKey(actual); err != nil {
+				if r.cfg.SaveHostKey != nil {
+					if err := r.cfg.SaveHostKey(actual); err != nil {
 						log.Printf("SSH TOFU: failed to save fingerprint for %s: %v", hostname, err)
 					}
 				}
 				return nil
 			}
-			if actual != r.knownFingerprint {
-				return fmt.Errorf("host key mismatch: got %s, expected %s", actual, r.knownFingerprint)
+			if actual != r.cfg.KnownFingerprint {
+				return fmt.Errorf("host key mismatch: got %s, expected %s", actual, r.cfg.KnownFingerprint)
 			}
 			return nil
 		}
@@ -177,8 +151,8 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 	var authMethods []gossh.AuthMethod
 
 	// Key-based auth: read the private key file and use it if provided.
-	if r.privateKeyFile != "" {
-		keyData, err := os.ReadFile(r.privateKeyFile)
+	if r.cfg.PrivateKeyFile != "" {
+		keyData, err := os.ReadFile(r.cfg.PrivateKeyFile)
 		if err != nil {
 			notify("SSH key file read failed: %v", err)
 			return
@@ -191,16 +165,16 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 		authMethods = append(authMethods, gossh.PublicKeys(signer))
 	}
 
-	if r.pass != "" {
+	if r.cfg.Password != "" {
 		// Automatic keyboard-interactive: silently answers all questions with the stored password.
 		autoKbdInt := gossh.KeyboardInteractive(func(_, _ string, questions []string, _ []bool) ([]string, error) {
 			answers := make([]string, len(questions))
 			for i := range questions {
-				answers[i] = r.pass
+				answers[i] = r.cfg.Password
 			}
 			return answers, nil
 		})
-		authMethods = append(authMethods, gossh.Password(r.pass), autoKbdInt)
+		authMethods = append(authMethods, gossh.Password(r.cfg.Password), autoKbdInt)
 	}
 
 	if len(authMethods) == 0 {
@@ -238,12 +212,12 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 		gossh.TTY_OP_ISPEED: 14400,
 		gossh.TTY_OP_OSPEED: 14400,
 	}
-	if err := sesh.RequestPty(r.term, int(r.rows), int(r.cols), modes); err != nil {
+	if err := sesh.RequestPty(r.cfg.Term, int(r.rows), int(r.cols), modes); err != nil {
 		notify("PTY request failed: %v", err)
 		return
 	}
 
-	for k, v := range r.env {
+	for k, v := range r.cfg.Env {
 		if err := sesh.Setenv(k, v); err != nil {
 			log.Printf("SSH setenv %s: %v (server may have rejected it)", k, err)
 		}
@@ -266,9 +240,9 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 	}
 
 	// Keepalive goroutine
-	if r.keepaliveInterval > 0 {
+	if r.cfg.KeepaliveInterval > 0 {
 		go func() {
-			ticker := time.NewTicker(r.keepaliveInterval)
+			ticker := time.NewTicker(r.cfg.KeepaliveInterval)
 			defer ticker.Stop()
 			for {
 				select {
@@ -295,8 +269,8 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 
 	// Idle timer
 	var idleTimer *time.Timer
-	if r.idleTimeout > 0 {
-		idleTimer = time.NewTimer(r.idleTimeout)
+	if r.cfg.IdleTimeout > 0 {
+		idleTimer = time.NewTimer(r.cfg.IdleTimeout)
 		defer idleTimer.Stop()
 		go func() {
 			select {
@@ -327,7 +301,7 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 				default:
 				}
 			}
-			idleTimer.Reset(r.idleTimeout)
+			idleTimer.Reset(r.cfg.IdleTimeout)
 		}
 
 		if msgType == websocket.TextMessage {

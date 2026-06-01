@@ -91,7 +91,13 @@ func (s *Server) wsHandler(c *gin.Context) {
 			// Per-host override for tofu_auto_accept takes precedence over the global config.
 			tofuAutoAccept = *sess.TOFUAutoAccept
 		}
-		runner = sessionssh.New(sess, sessionssh.Config{
+		runner = sessionssh.New(sessionssh.Config{
+			Address:           sess.Address,
+			Port:              sess.Port,
+			Username:          sess.Username,
+			Password:          sess.Password,
+			PrivateKeyFile:    sess.PrivateKeyFile,
+			Term:              sess.Term,
 			IdleTimeout:       idleTimeout,
 			KeepaliveInterval: keepaliveInterval,
 			DialTimeout:       s.sshCfg.DialTimeout,
@@ -99,6 +105,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 			TOFUAutoAccept:    tofuAutoAccept,
 			KnownFingerprint:  knownFP,
 			SaveHostKey:       saveHostKey,
+			Env:               sshEnv,
 		}, cols, rows)
 		log.Printf("session open  method=ssh user=%s host=%s", sess.Username, sess.Address)
 		defer log.Printf("session close method=ssh user=%s host=%s", sess.Username, sess.Address)
@@ -121,7 +128,9 @@ func (s *Server) wsHandler(c *gin.Context) {
 		for k, v := range sess.Env {
 			localEnv[k] = v
 		}
-		runner = sessionlocal.New(sess, sessionlocal.Config{
+		runner = sessionlocal.New(sessionlocal.Config{
+			Command:     sess.Command,
+			Term:        sess.Term,
 			WorkingDir:  localWorkingDir,
 			IdleTimeout: localIdleTimeout,
 			Env:         localEnv,

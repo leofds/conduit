@@ -12,46 +12,29 @@ import (
 	"github.com/creack/pty"
 	"github.com/gorilla/websocket"
 
-	"github.com/leofds/conduit/internal/resolver"
 	"github.com/leofds/conduit/internal/session"
 )
 
 // Config holds session-level parameters for local sessions.
 type Config struct {
 	WorkingDir  string
+	Term        string
+	Command     string
 	IdleTimeout time.Duration
 	Env         map[string]string
 }
 
 type Runner struct {
-	command     string
-	workingDir  string
-	term        string
-	cols        uint16
-	rows        uint16
-	idleTimeout time.Duration
-	env         map[string]string
+	cfg  Config
+	rows uint16
+	cols uint16
 }
 
-func New(cfg resolver.LocalConfig, localCfg Config, cols, rows uint16) *Runner {
-	term := cfg.Term
-	if term == "" {
-		term = "xterm-256color"
-	}
-	if cols == 0 {
-		cols = 80
-	}
-	if rows == 0 {
-		rows = 24
-	}
+func New(localCfg Config, cols, rows uint16) *Runner {
 	return &Runner{
-		command:     cfg.Command,
-		workingDir:  localCfg.WorkingDir,
-		term:        term,
-		cols:        cols,
-		rows:        rows,
-		idleTimeout: localCfg.IdleTimeout,
-		env:         localCfg.Env,
+		cfg:  localCfg,
+		rows: rows,
+		cols: cols,
 	}
 }
 
@@ -67,20 +50,20 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 	}
 
 	var cmd *exec.Cmd
-	if r.command != "" {
-		cmd = exec.CommandContext(ctx, r.command)
+	if r.cfg.Command != "" {
+		cmd = exec.CommandContext(ctx, r.cfg.Command)
 	} else if os.Getuid() == 0 {
 		cmd = exec.CommandContext(ctx, "/bin/login")
 	} else {
 		cmd = exec.CommandContext(ctx, "sudo", "-n", "/bin/login")
 	}
 	cmd.Env = os.Environ()
-	for k, v := range r.env {
+	for k, v := range r.cfg.Env {
 		cmd.Env = append(cmd.Env, k+"="+v)
 	}
-	cmd.Env = append(cmd.Env, "TERM="+r.term)
-	if r.workingDir != "" {
-		cmd.Dir = r.workingDir
+	cmd.Env = append(cmd.Env, "TERM="+r.cfg.Term)
+	if r.cfg.WorkingDir != "" {
+		cmd.Dir = r.cfg.WorkingDir
 	}
 
 	ptmx, err := pty.Start(cmd)
@@ -117,8 +100,8 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 
 	// Idle timer
 	var idleTimer *time.Timer
-	if r.idleTimeout > 0 {
-		idleTimer = time.NewTimer(r.idleTimeout)
+	if r.cfg.IdleTimeout > 0 {
+		idleTimer = time.NewTimer(r.cfg.IdleTimeout)
 		defer idleTimer.Stop()
 		go func() {
 			select {
@@ -149,7 +132,7 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 				default:
 				}
 			}
-			idleTimer.Reset(r.idleTimeout)
+			idleTimer.Reset(r.cfg.IdleTimeout)
 		}
 
 		if msgType == websocket.TextMessage {
