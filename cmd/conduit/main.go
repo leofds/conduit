@@ -110,6 +110,7 @@ func main() {
 	}
 
 	srv := server.New(r)
+	srv.SetDebug(cfg.Debug)
 	srv.SetAllowLocal(cfg.AllowLocalShell)
 	srv.SetLocalConfig(cfg.Local)
 	srv.SetDemo(cfg.Demo)

@@ -44,7 +44,8 @@ The demo page also has a hardcoded JWT token (payload `{"sub":"1234567890","name
 
 Conduit reads configs from `./conduit.yaml` or `/etc/conduit/conduit.yaml`. Both files are merged when present; the local file wins on duplicate keys.
 
-```yaml
+```yaml# Show a terminal debug banner before the session starts
+ debug: false
 # Demo page
 demo: true
 

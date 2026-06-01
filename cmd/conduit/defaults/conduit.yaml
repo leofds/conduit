@@ -2,6 +2,9 @@
 # Place this file at ./conduit.yaml (next to the binary) or /etc/conduit/conduit.yaml.
 # When both exist they are merged; entries in ./conduit.yaml override /etc/conduit/conduit.yaml.
 
+# Show debug banner and session configuration in the terminal.
+debug: false
+
 # Demo page: set to false to disable the /demo page
 demo: true
 

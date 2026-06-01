@@ -55,6 +55,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 	}
 
 	var runner session.Runner
+	var bannerCfg any
 	switch sess := cfg.(type) {
 	case resolver.SSHConfig:
 		if sess.Term == "" {
@@ -91,7 +92,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 			// Per-host override for tofu_auto_accept takes precedence over the global config.
 			tofuAutoAccept = *sess.TOFUAutoAccept
 		}
-		runner = sessionssh.New(sessionssh.Config{
+		sshCfg := sessionssh.Config{
 			Address:           sess.Address,
 			Port:              sess.Port,
 			Username:          sess.Username,
@@ -106,7 +107,9 @@ func (s *Server) wsHandler(c *gin.Context) {
 			KnownFingerprint:  knownFP,
 			SaveHostKey:       saveHostKey,
 			Env:               sshEnv,
-		}, cols, rows)
+		}
+		runner = sessionssh.New(sshCfg, cols, rows)
+		bannerCfg = sshCfg
 		log.Printf("session open  method=ssh user=%s host=%s", sess.Username, sess.Address)
 		defer log.Printf("session close method=ssh user=%s host=%s", sess.Username, sess.Address)
 	case resolver.LocalConfig:
@@ -128,13 +131,15 @@ func (s *Server) wsHandler(c *gin.Context) {
 		for k, v := range sess.Env {
 			localEnv[k] = v
 		}
-		runner = sessionlocal.New(sessionlocal.Config{
+		localCfg := sessionlocal.Config{
 			Command:     sess.Command,
 			Term:        sess.Term,
 			WorkingDir:  localWorkingDir,
 			IdleTimeout: localIdleTimeout,
 			Env:         localEnv,
-		}, cols, rows)
+		}
+		runner = sessionlocal.New(localCfg, cols, rows)
+		bannerCfg = localCfg
 		log.Printf("session open  method=local command=%s", sess.Command)
 		defer log.Printf("session close method=local command=%s", sess.Command)
 	default:
@@ -163,6 +168,11 @@ func (s *Server) wsHandler(c *gin.Context) {
 		return
 	}
 	defer func() { _ = wsConn.Close() }()
+
+	if s.debug {
+		log.Printf("Debug")
+		s.writeDebugBanner(wsConn, host, bannerCfg)
+	}
 
 	runner.Run(c.Request.Context(), wsConn)
 }

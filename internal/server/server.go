@@ -23,6 +23,7 @@ type Server struct {
 	resolver       resolver.Resolver
 	allowLocal     bool
 	demo           bool
+	debug          bool
 	sshCfg         config.SSHConfig
 	localCfg       config.LocalShellConfig
 	allowedOrigins []string
@@ -42,6 +43,11 @@ func New(r resolver.Resolver) *Server {
 // SetAllowLocal controls whether local shell sessions are permitted.
 func (s *Server) SetAllowLocal(allow bool) {
 	s.allowLocal = allow
+}
+
+// SetDebug controls whether debug session output is shown before the shell.
+func (s *Server) SetDebug(debug bool) {
+	s.debug = debug
 }
 
 // SetDemo controls whether the demo page is enabled.

@@ -49,6 +49,7 @@ type LocalShellConfig struct {
 
 // Config is the top-level Conduit configuration.
 type Config struct {
+	Debug           bool             `yaml:"debug"`             // show debug banner and session details in the terminal
 	Resolver        ResolverType     `yaml:"resolver"`          // "file" (default) or "api"
 	Port            int              `yaml:"port"`              // HTTP listen port (default 8080)
 	Demo            bool             `yaml:"demo"`              // enable the demo page (default true)
@@ -63,6 +64,7 @@ type Config struct {
 // Missing files are silently skipped. Returns a default config if none are found.
 func Load() (*Config, error) {
 	cfg := &Config{
+		Debug:           false,
 		Resolver:        ResolverFile,
 		Port:            8080,
 		Demo:            true,
