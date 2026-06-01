@@ -52,6 +52,10 @@ ssh:
   verify_host_key: true    # enable TOFU host key verification for all SSH connections
   tofu_auto_accept: false  # skip the interactive fingerprint prompt and auto-accept unknown host keys
   known_hosts_file: ./known_hosts.yaml  # TOFU host-key fingerprint store
+  # env defines environment variables forwarded to the SSH server via Setenv.
+  # The SSH server must allow them with AcceptEnv.
+  env:
+    LANG: en_US.UTF-8
 
 # Resolver to use: "file" (default) or "api"
 resolver: file

@@ -28,13 +28,14 @@ type APIConfig struct {
 
 // SSHConfig holds session-level parameters for SSH connections.
 type SSHConfig struct {
-	Term              string        `yaml:"term"` // terminal type for SSH sessions (default xterm-256color)
-	IdleTimeout       time.Duration `yaml:"idle_timeout"`
-	KeepaliveInterval time.Duration `yaml:"keepalive_interval"`
-	DialTimeout       time.Duration `yaml:"dial_timeout"`
-	VerifyHostKey     bool          `yaml:"verify_host_key"`  // enable TOFU host key verification for all SSH hosts
-	TOFUAutoAccept    bool          `yaml:"tofu_auto_accept"` // skip the interactive prompt and auto-accept unknown fingerprints
-	KnownHostsFile    string        `yaml:"known_hosts_file"` // path to the TOFU known-hosts YAML file
+	Term              string            `yaml:"term"` // terminal type for SSH sessions (default xterm-256color)
+	IdleTimeout       time.Duration     `yaml:"idle_timeout"`
+	KeepaliveInterval time.Duration     `yaml:"keepalive_interval"`
+	DialTimeout       time.Duration     `yaml:"dial_timeout"`
+	VerifyHostKey     bool              `yaml:"verify_host_key"`  // enable TOFU host key verification for all SSH hosts
+	TOFUAutoAccept    bool              `yaml:"tofu_auto_accept"` // skip the interactive prompt and auto-accept unknown fingerprints
+	KnownHostsFile    string            `yaml:"known_hosts_file"` // path to the TOFU known-hosts YAML file
+	Env               map[string]string `yaml:"env"`
 }
 
 // LocalShellConfig holds shell parameters for local sessions.

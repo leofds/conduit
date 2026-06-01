@@ -72,6 +72,14 @@ func (s *Server) wsHandler(c *gin.Context) {
 		if sess.KeepaliveInterval != nil {
 			keepaliveInterval = *sess.KeepaliveInterval
 		}
+		sshEnv := make(map[string]string, len(s.sshCfg.Env)+len(sess.Env))
+		for k, v := range s.sshCfg.Env {
+			sshEnv[k] = v
+		}
+		for k, v := range sess.Env {
+			sshEnv[k] = v
+		}
+		sess.Env = sshEnv
 		knownFP := ""
 		var saveHostKey func(string) error
 		if verifyHostKey && s.knownHosts != nil {
