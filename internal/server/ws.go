@@ -58,7 +58,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 	switch sess := cfg.(type) {
 	case resolver.SSHConfig:
 		if sess.Term == "" {
-			sess.Term = s.sshTerm
+			sess.Term = s.sshCfg.Term
 		}
 		verifyHostKey := s.sshCfg.VerifyHostKey
 		if sess.VerifyHostKey != nil {
@@ -96,18 +96,18 @@ func (s *Server) wsHandler(c *gin.Context) {
 		defer log.Printf("session close method=ssh user=%s host=%s", sess.Username, sess.Address)
 	case resolver.LocalConfig:
 		if sess.Term == "" {
-			sess.Term = s.localTerm
+			sess.Term = s.localCfg.Term
 		}
-		localIdleTimeout := s.localIdleTimeout
+		localIdleTimeout := s.localCfg.IdleTimeout
 		if sess.IdleTimeout != nil {
 			localIdleTimeout = *sess.IdleTimeout
 		}
-		localWorkingDir := s.localWorkingDir
+		localWorkingDir := s.localCfg.WorkingDir
 		if sess.WorkingDir != nil {
 			localWorkingDir = *sess.WorkingDir
 		}
-		localEnv := make(map[string]string, len(s.localEnv)+len(sess.Env))
-		for k, v := range s.localEnv {
+		localEnv := make(map[string]string, len(s.localCfg.Env)+len(sess.Env))
+		for k, v := range s.localCfg.Env {
 			localEnv[k] = v
 		}
 		for k, v := range sess.Env {

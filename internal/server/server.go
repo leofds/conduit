@@ -18,26 +18,22 @@ import (
 var staticFiles embed.FS
 
 type Server struct {
-	router           *gin.Engine
-	httpServer       *http.Server
-	resolver         resolver.Resolver
-	allowLocal       bool
-	demo             bool
-	sshTerm          string
-	localTerm        string
-	sshCfg           config.SSHConfig
-	localIdleTimeout time.Duration
-	localWorkingDir  string
-	localEnv         map[string]string
-	allowedOrigins   []string
-	knownHosts       *knownhosts.Store
+	router         *gin.Engine
+	httpServer     *http.Server
+	resolver       resolver.Resolver
+	allowLocal     bool
+	demo           bool
+	sshCfg         config.SSHConfig
+	localCfg       config.LocalShellConfig
+	allowedOrigins []string
+	knownHosts     *knownhosts.Store
 }
 
 func New(r resolver.Resolver) *Server {
 	gin.SetMode(gin.ReleaseMode)
 	gin := gin.Default()
 
-	s := &Server{router: gin, resolver: r, allowLocal: true, demo: true, sshTerm: "xterm-256color", localTerm: "xterm-256color"}
+	s := &Server{router: gin, resolver: r, allowLocal: true, demo: true}
 	s.registerRoutes()
 
 	return s
@@ -53,39 +49,14 @@ func (s *Server) SetDemo(enabled bool) {
 	s.demo = enabled
 }
 
-// SetSSHTerm sets the terminal type fallback for SSH sessions.
-func (s *Server) SetSSHTerm(term string) {
-	if term != "" {
-		s.sshTerm = term
-	}
-}
-
-// SetLocalTerm sets the terminal type fallback for local shell sessions.
-func (s *Server) SetLocalTerm(term string) {
-	if term != "" {
-		s.localTerm = term
-	}
-}
-
 // SetSSHConfig applies SSH session-level parameters (timeouts, keepalive).
 func (s *Server) SetSSHConfig(cfg config.SSHConfig) {
 	s.sshCfg = cfg
 }
 
-// SetLocalIdleTimeout sets the inactivity timeout for local shell sessions.
-func (s *Server) SetLocalIdleTimeout(d time.Duration) {
-	s.localIdleTimeout = d
-}
-
-// SetLocalWorkingDir sets the working directory for local shell sessions.
-// An empty string means the session inherits conduit's working directory.
-func (s *Server) SetLocalWorkingDir(dir string) {
-	s.localWorkingDir = dir
-}
-
-// SetLocalEnv sets environment variables that are injected into every local shell session.
-func (s *Server) SetLocalEnv(env map[string]string) {
-	s.localEnv = env
+// SetLocalConfig sets the global defaults for local shell sessions.
+func (s *Server) SetLocalConfig(cfg config.LocalShellConfig) {
+	s.localCfg = cfg
 }
 
 // SetAllowedOrigins sets the WebSocket Origin allowlist.

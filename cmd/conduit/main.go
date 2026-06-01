@@ -111,13 +111,9 @@ func main() {
 
 	srv := server.New(r)
 	srv.SetAllowLocal(cfg.AllowLocalShell)
-	srv.SetLocalIdleTimeout(cfg.Local.IdleTimeout)
-	srv.SetLocalWorkingDir(cfg.Local.WorkingDir)
-	srv.SetLocalEnv(cfg.Local.Env)
-	srv.SetLocalTerm(cfg.Local.Term)
+	srv.SetLocalConfig(cfg.Local)
 	srv.SetDemo(cfg.Demo)
 	srv.SetSSHConfig(cfg.SSH)
-	srv.SetSSHTerm(cfg.SSH.Term)
 	srv.SetAllowedOrigins(cfg.AllowedOrigins)
 
 	ks, err := knownhosts.New(cfg.SSH.KnownHostsFile)
