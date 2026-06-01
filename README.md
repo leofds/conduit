@@ -44,8 +44,10 @@ The demo page also has a hardcoded JWT token (payload `{"sub":"1234567890","name
 
 Conduit reads configs from `./conduit.yaml` or `/etc/conduit/conduit.yaml`. Both files are merged when present; the local file wins on duplicate keys.
 
-```yaml# Show a terminal debug banner before the session starts
- debug: false
+```yaml
+# Show a terminal debug banner before the session starts
+debug: false
+
 # Demo page
 demo: true
 
@@ -64,7 +66,6 @@ port: 8080
 
 # Local shell session
 local:
-  enable: true
   command: "/bin/bash"
   term: xterm-256color  # terminal type reported to the local shell
   idle_timeout: 10m     # 0 disables the timeout
