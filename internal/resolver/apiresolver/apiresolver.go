@@ -59,31 +59,31 @@ func New(cfg Config) (*Resolver, error) {
 }
 
 // requestBody is the JSON payload sent to both endpoints.
-type requestBody struct {
+type RequestBody struct {
 	Host string `json:"host"`
 }
 
-// sshResponseBody is the JSON payload returned by the /ssh endpoint.
-type sshResponseBody struct {
-	Address           string            `json:"address"`
-	Port              string            `json:"port"`
-	Username          string            `json:"username"`
-	Password          string            `json:"password"`
-	PrivateKeyFile    string            `json:"private_key_file"`
-	Term              string            `json:"term,omitempty"` // per-host override; omit to use global default
+// SSHResponseBody is the JSON payload returned by the /ssh endpoint.
+type SSHResponseBody struct {
+	Address           string            `json:"address,omitempty"`
+	Port              string            `json:"port,omitempty"`
+	Username          string            `json:"username,omitempty"`
+	Password          string            `json:"password,omitempty"`
+	PrivateKeyFile    string            `json:"private_key_file,omitempty"`
+	Term              string            `json:"term,omitempty"`
 	Env               map[string]string `json:"env,omitempty"`
-	TOFUAutoAccept    *bool             `json:"tofu_auto_accept,omitempty"`   // per-host override; omit to use global default
-	VerifyHostKey     *bool             `json:"verify_host_key,omitempty"`    // per-host override; omit to use global default
-	IdleTimeout       *string           `json:"idle_timeout,omitempty"`       // Go duration string, e.g. "10m"; omit to use global default
-	KeepaliveInterval *string           `json:"keepalive_interval,omitempty"` // Go duration string, e.g. "30s"; omit to use global default
+	IdleTimeout       string            `json:"idle_timeout,omitempty"`
+	KeepaliveInterval string            `json:"keepalive_interval,omitempty"`
+	TOFUAutoAccept    *bool             `json:"tofu_auto_accept,omitempty"`
+	VerifyHostKey     *bool             `json:"verify_host_key,omitempty"`
 }
 
-// localResponseBody is the JSON payload returned by the /local endpoint.
-type localResponseBody struct {
-	Command     string            `json:"command"`
-	Term        string            `json:"term,omitempty"`         // per-session override; omit to use global default
-	WorkingDir  *string           `json:"working_dir,omitempty"`  // absolute path; omit to use global default
-	IdleTimeout *string           `json:"idle_timeout,omitempty"` // Go duration string, e.g. "10m"; omit to use global default
+// LocalResponseBody is the JSON payload returned by the /local endpoint.
+type LocalResponseBody struct {
+	Command     string            `json:"command,omitempty"`
+	Term        string            `json:"term,omitempty"`
+	WorkingDir  string            `json:"working_dir,omitempty"`
+	IdleTimeout string            `json:"idle_timeout,omitempty"`
 	Env         map[string]string `json:"env,omitempty"`
 }
 
@@ -102,7 +102,7 @@ func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error)
 			return nil, fmt.Errorf("apiresolver: build request: %w", err)
 		}
 	} else {
-		body, err := json.Marshal(requestBody{Host: req.Host})
+		body, err := json.Marshal(RequestBody{Host: req.Host})
 		if err != nil {
 			return nil, fmt.Errorf("apiresolver: marshal: %w", err)
 		}
@@ -127,20 +127,22 @@ func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error)
 		// handled below
 	case http.StatusUnauthorized, http.StatusForbidden:
 		return nil, fmt.Errorf("apiresolver: unauthorized")
+	case http.StatusNotFound:
+		return nil, fmt.Errorf("apiresolver: host %s not found", req.Host)
 	default:
 		return nil, fmt.Errorf("apiresolver: unexpected status %d", resp.StatusCode)
 	}
 
 	if isLocal {
-		var result localResponseBody
+		var result LocalResponseBody
 		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 			return nil, fmt.Errorf("apiresolver: decode response: %w", err)
 		}
 		var idleTimeout *time.Duration
-		if result.IdleTimeout != nil {
-			d, err := time.ParseDuration(*result.IdleTimeout)
+		if result.IdleTimeout != "" {
+			d, err := time.ParseDuration(result.IdleTimeout)
 			if err != nil {
-				return nil, fmt.Errorf("apiresolver: invalid idle_timeout %q: %w", *result.IdleTimeout, err)
+				return nil, fmt.Errorf("apiresolver: invalid idle_timeout %q: %w", result.IdleTimeout, err)
 			}
 			idleTimeout = &d
 		}
@@ -153,33 +155,29 @@ func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error)
 		}, nil
 	}
 
-	var result sshResponseBody
+	var result SSHResponseBody
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("apiresolver: decode response: %w", err)
 	}
-	port := result.Port
-	if port == "" {
-		port = "22"
-	}
 	var idleTimeout *time.Duration
-	if result.IdleTimeout != nil {
-		d, err := time.ParseDuration(*result.IdleTimeout)
+	if result.IdleTimeout != "" {
+		d, err := time.ParseDuration(result.IdleTimeout)
 		if err != nil {
-			return nil, fmt.Errorf("apiresolver: invalid idle_timeout %q: %w", *result.IdleTimeout, err)
+			return nil, fmt.Errorf("apiresolver: invalid idle_timeout %q: %w", result.IdleTimeout, err)
 		}
 		idleTimeout = &d
 	}
 	var keepaliveInterval *time.Duration
-	if result.KeepaliveInterval != nil {
-		d, err := time.ParseDuration(*result.KeepaliveInterval)
+	if result.KeepaliveInterval != "" {
+		d, err := time.ParseDuration(result.KeepaliveInterval)
 		if err != nil {
-			return nil, fmt.Errorf("apiresolver: invalid keepalive_interval %q: %w", *result.KeepaliveInterval, err)
+			return nil, fmt.Errorf("apiresolver: invalid keepalive_interval %q: %w", result.KeepaliveInterval, err)
 		}
 		keepaliveInterval = &d
 	}
 	return resolver.SSHConfig{
 		Address:           result.Address,
-		Port:              port,
+		Port:              result.Port,
 		Username:          result.Username,
 		Password:          result.Password,
 		PrivateKeyFile:    result.PrivateKeyFile,

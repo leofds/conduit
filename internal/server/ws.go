@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -58,12 +59,40 @@ func (s *Server) wsHandler(c *gin.Context) {
 	var bannerCfg any
 	switch sess := cfg.(type) {
 	case resolver.SSHConfig:
-		if sess.Term == "" {
-			sess.Term = s.sshCfg.Term
+		address := sess.Address
+		if address == "" {
+			err := fmt.Errorf("address not found")
+			log.Printf("resolver error host=%s: %v", host, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		port := sess.Port
+		if port == "" {
+			port = "22"
+		}
+		username := sess.Username
+		if username == "" {
+			err := fmt.Errorf("username not found")
+			log.Printf("resolver error host=%s: %v", host, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		password := sess.Password
+		privateKeyFile := sess.PrivateKeyFile
+		term := s.sshCfg.Term
+		if sess.Term != "" {
+			term = sess.Term
+		}
+		if term == "" {
+			term = "xterm-256color"
 		}
 		verifyHostKey := s.sshCfg.VerifyHostKey
 		if sess.VerifyHostKey != nil {
 			verifyHostKey = *sess.VerifyHostKey
+		}
+		tofuAutoAccept := s.sshCfg.TOFUAutoAccept
+		if sess.TOFUAutoAccept != nil {
+			tofuAutoAccept = *sess.TOFUAutoAccept
 		}
 		idleTimeout := s.sshCfg.IdleTimeout
 		if sess.IdleTimeout != nil {
@@ -87,18 +116,13 @@ func (s *Server) wsHandler(c *gin.Context) {
 			knownFP = s.knownHosts.Get(host)
 			saveHostKey = func(fp string) error { return s.knownHosts.Set(host, fp) }
 		}
-		tofuAutoAccept := s.sshCfg.TOFUAutoAccept
-		if sess.TOFUAutoAccept != nil {
-			// Per-host override for tofu_auto_accept takes precedence over the global config.
-			tofuAutoAccept = *sess.TOFUAutoAccept
-		}
 		sshCfg := sessionssh.Config{
-			Address:           sess.Address,
-			Port:              sess.Port,
-			Username:          sess.Username,
-			Password:          sess.Password,
-			PrivateKeyFile:    sess.PrivateKeyFile,
-			Term:              sess.Term,
+			Address:           address,
+			Port:              port,
+			Username:          username,
+			Password:          password,
+			PrivateKeyFile:    privateKeyFile,
+			Term:              term,
 			IdleTimeout:       idleTimeout,
 			KeepaliveInterval: keepaliveInterval,
 			DialTimeout:       s.sshCfg.DialTimeout,
@@ -113,17 +137,26 @@ func (s *Server) wsHandler(c *gin.Context) {
 		log.Printf("session open  method=ssh user=%s host=%s", sess.Username, sess.Address)
 		defer log.Printf("session close method=ssh user=%s host=%s", sess.Username, sess.Address)
 	case resolver.LocalConfig:
-		if sess.Term == "" {
-			sess.Term = s.localCfg.Term
+		command := s.localCfg.Command
+		if sess.Command != "" {
+			command = sess.Command
+		}
+		term := s.localCfg.Term
+		if sess.Term != "" {
+			term = sess.Term
+		}
+		if term == "" {
+			term = "xterm-256color"
+		}
+		localWorkingDir := s.localCfg.WorkingDir
+		if sess.WorkingDir != "" {
+			localWorkingDir = sess.WorkingDir
 		}
 		localIdleTimeout := s.localCfg.IdleTimeout
 		if sess.IdleTimeout != nil {
 			localIdleTimeout = *sess.IdleTimeout
 		}
-		localWorkingDir := s.localCfg.WorkingDir
-		if sess.WorkingDir != nil {
-			localWorkingDir = *sess.WorkingDir
-		}
+		// Join global and session-specific env, with session taking precedence.
 		localEnv := make(map[string]string, len(s.localCfg.Env)+len(sess.Env))
 		for k, v := range s.localCfg.Env {
 			localEnv[k] = v
@@ -132,8 +165,8 @@ func (s *Server) wsHandler(c *gin.Context) {
 			localEnv[k] = v
 		}
 		localCfg := sessionlocal.Config{
-			Command:     sess.Command,
-			Term:        sess.Term,
+			Command:     command,
+			Term:        term,
 			WorkingDir:  localWorkingDir,
 			IdleTimeout: localIdleTimeout,
 			Env:         localEnv,
@@ -169,8 +202,8 @@ func (s *Server) wsHandler(c *gin.Context) {
 	}
 	defer func() { _ = wsConn.Close() }()
 
-	if s.debug {
-		log.Printf("Debug")
+	if s.debugBanner {
+		log.Printf("Debug banner enabled")
 		s.writeDebugBanner(wsConn, host, bannerCfg)
 	}
 

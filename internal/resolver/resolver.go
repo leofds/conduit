@@ -18,10 +18,10 @@ type SSHConfig struct {
 	PrivateKeyFile    string
 	Term              string
 	Env               map[string]string
-	TOFUAutoAccept    *bool          // per-host override; nil = use global default
-	VerifyHostKey     *bool          // per-host override; nil = use global default
-	IdleTimeout       *time.Duration // per-host override; nil = use global default
-	KeepaliveInterval *time.Duration // per-host override; nil = use global default
+	TOFUAutoAccept    *bool
+	VerifyHostKey     *bool
+	IdleTimeout       *time.Duration
+	KeepaliveInterval *time.Duration
 }
 
 func (SSHConfig) isSessionConfig() {}
@@ -30,9 +30,9 @@ func (SSHConfig) isSessionConfig() {}
 type LocalConfig struct {
 	Command     string
 	Term        string
-	WorkingDir  *string           // per-session override; nil = use global default
-	IdleTimeout *time.Duration    // per-session override; nil = use global default
-	Env         map[string]string // additional environment variables for the local session
+	WorkingDir  string
+	IdleTimeout *time.Duration
+	Env         map[string]string
 }
 
 func (LocalConfig) isSessionConfig() {}

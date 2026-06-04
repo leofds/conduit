@@ -20,12 +20,12 @@ type hostEntry struct {
 	Username          string            `yaml:"username"`
 	Password          string            `yaml:"password"`
 	PrivateKeyFile    string            `yaml:"private_key_file"`
-	Term              string            `yaml:"term"` // per-host override; omit to use global default
+	Term              string            `yaml:"term"`
 	Env               map[string]string `yaml:"env"`
-	TOFUAutoAccept    *bool             `yaml:"tofu_auto_accept"`   // per-host override; omit to use global default
-	VerifyHostKey     *bool             `yaml:"verify_host_key"`    // per-host override; omit to use global default
-	IdleTimeout       *time.Duration    `yaml:"idle_timeout"`       // per-host override; omit to use global default
-	KeepaliveInterval *time.Duration    `yaml:"keepalive_interval"` // per-host override; omit to use global default
+	TOFUAutoAccept    *bool             `yaml:"tofu_auto_accept"`
+	VerifyHostKey     *bool             `yaml:"verify_host_key"`
+	IdleTimeout       *time.Duration    `yaml:"idle_timeout"`
+	KeepaliveInterval *time.Duration    `yaml:"keepalive_interval"`
 }
 
 type hostsFile struct {
@@ -87,11 +87,6 @@ func (r *Resolver) Reload() error {
 
 func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error) {
 	if req.Host == config.Local {
-		var workingDir *string
-		if r.local.WorkingDir != "" {
-			wd := r.local.WorkingDir
-			workingDir = &wd
-		}
 		var idleTimeout *time.Duration
 		if r.local.IdleTimeout != 0 {
 			d := r.local.IdleTimeout
@@ -100,27 +95,19 @@ func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error)
 		return resolver.LocalConfig{
 			Command:     r.local.Command,
 			Term:        r.local.Term,
-			WorkingDir:  workingDir,
+			WorkingDir:  r.local.WorkingDir,
 			IdleTimeout: idleTimeout,
 			Env:         r.local.Env,
 		}, nil
 	}
 	entry, ok := r.hosts[req.Host]
 	if !ok {
-		return nil, fmt.Errorf("host %q not found", req.Host)
-	}
-	username := entry.Username
-	if username == "" {
-		return nil, fmt.Errorf("username not found for host %q", req.Host)
-	}
-	port := entry.Port
-	if port == "" {
-		port = "22"
+		return nil, fmt.Errorf("fileresolver: host %q not found", req.Host)
 	}
 	return resolver.SSHConfig{
 		Address:           entry.Address,
-		Port:              port,
-		Username:          username,
+		Port:              entry.Port,
+		Username:          entry.Username,
 		Password:          entry.Password,
 		PrivateKeyFile:    entry.PrivateKeyFile,
 		Term:              entry.Term,
