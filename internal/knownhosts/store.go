@@ -101,3 +101,23 @@ func (s *Store) Set(host, fingerprint string) error {
 	}
 	return nil
 }
+
+// Remove deletes the stored fingerprint for host and persists the file.
+// It is not an error if the host is not known.
+func (s *Store) Remove(host string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.hosts, host)
+	data, err := yaml.Marshal(file{Hosts: s.hosts})
+	if err != nil {
+		return fmt.Errorf("knownhosts: marshal: %w", err)
+	}
+	if err := os.WriteFile(s.path, data, 0600); err != nil {
+		return fmt.Errorf("knownhosts: writing %s: %w", s.path, err)
+	}
+	if info, err := os.Stat(s.path); err == nil {
+		s.lastMod = info.ModTime()
+	}
+	return nil
+}
+

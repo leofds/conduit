@@ -28,6 +28,15 @@ Once connected, the terminal opens at `/terminal` and the session runs until you
 
 The demo page also has a hardcoded JWT token (payload `{"sub":"1234567890","name":"John Doe","admin":true}`, signed with secret `conduit`) that is automatically sent as a `conduit_session` cookie for testing with the `api` resolver.
 
+### Command-line flags
+
+- **`-R <host>`** — remove the stored SSH host key fingerprint for the given host from the TOFU known-hosts file and exit.
+  Useful after a server's host key has changed (e.g. after a reinstall). The next connection to that host will prompt to trust the new fingerprint.
+
+  ```bash
+  conduit -R myserver
+  ```
+
 ## Features
 
 - **Browser-based terminal** - full xterm.js terminal served over WebSocket, no client software required
@@ -254,6 +263,16 @@ hosts:
 > **Note:** enabling `tofu_auto_accept` is convenient for trusted internal hosts but removes the protection against a changed or spoofed host key on first use.
 
 When `verify_host_key` is omitted or `false`, the host key is not checked at all (equivalent to `StrictHostKeyChecking no`).
+
+### Resetting a stored fingerprint
+
+If a server's host key changes (e.g. after a reinstall), Conduit will refuse the connection due to a fingerprint mismatch. Remove the stored entry with:
+
+```bash
+conduit -R <host>
+```
+
+The next connection to that host will prompt to trust the new fingerprint.
 
 ## mockapi — API resolver test server
 

@@ -3,12 +3,14 @@ package main
 import (
 	"embed"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/leofds/conduit/internal/config"
@@ -79,6 +81,9 @@ func chdirToBin() {
 }
 
 func main() {
+	resetKnownHost := flag.String("R", "", "remove the stored SSH host key fingerprint for the given host and exit")
+	flag.Parse()
+
 	log.Printf("Conduit %s", version.Version)
 	chdirToBin()
 	writeDefaultsIfMissing()
@@ -86,6 +91,24 @@ func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	if *resetKnownHost != "" {
+		host := strings.TrimSpace(*resetKnownHost)
+		ks, err := knownhosts.New(cfg.SSH.KnownHostsFile)
+		if err != nil {
+			log.Fatalf("Known hosts: %v", err)
+		}
+		if err := ks.Remove(host); err != nil {
+			log.Fatalf("Failed to reset known host %q: %v", host, err)
+		}
+		log.Printf("Removed stored fingerprint for host %q", host)
+		return
+	}
+
+	// Ensure no unexpected flags remain before starting the server.
+	if flag.NArg() > 0 {
+		log.Fatalf("unexpected arguments: %v", flag.Args())
 	}
 
 	var r resolver.Resolver
