@@ -39,30 +39,12 @@ import (
 	"github.com/leofds/conduit/internal/config"
 	"github.com/leofds/conduit/internal/resolver"
 	"github.com/leofds/conduit/internal/resolver/fileresolver"
+	"github.com/leofds/conduit/internal/resolver/apiresolver"
 )
 
 // These structs mirror apiresolver's request/response bodies.
 type resolveRequest struct {
 	Host string `json:"host"`
-}
-
-type sshResponse struct {
-	Address        string            `json:"address,omitempty"`
-	Port           string            `json:"port,omitempty"`
-	Username       string            `json:"username,omitempty"`
-	Password       string            `json:"password,omitempty"`
-	PrivateKeyFile string            `json:"private_key_file,omitempty"`
-	Term           string            `json:"term,omitempty"`
-	Env            map[string]string `json:"env,omitempty"`
-	TOFUAutoAccept *bool             `json:"tofu_auto_accept,omitempty"`
-}
-
-type localResponse struct {
-	Command     string            `json:"command,omitempty"`
-	Term        string            `json:"term,omitempty"`
-	WorkingDir  *string           `json:"working_dir,omitempty"`
-	IdleTimeout *string           `json:"idle_timeout,omitempty"`
-	Env         map[string]string `json:"env,omitempty"`
 }
 
 // validateBody reads r.Body, validates its JSON against the named schema in doc,
@@ -123,7 +105,7 @@ func makeSSHHandler(doc *openapi3.T, fr *fileresolver.Resolver) http.HandlerFunc
 			http.Error(w, "not an SSH host", http.StatusBadRequest)
 			return
 		}
-		resp := sshResponse{
+		resp := apiresolver.SSHResponseBody{
 			Address:        v.Address,
 			Port:           v.Port,
 			Username:       v.Username,
@@ -132,6 +114,13 @@ func makeSSHHandler(doc *openapi3.T, fr *fileresolver.Resolver) http.HandlerFunc
 			Term:           v.Term,
 			Env:            v.Env,
 			TOFUAutoAccept: v.TOFUAutoAccept,
+			VerifyHostKey:  v.VerifyHostKey,
+		}
+		if v.IdleTimeout != nil {
+			resp.IdleTimeout = v.IdleTimeout.String()
+		}
+		if v.KeepaliveInterval != nil {
+			resp.KeepaliveInterval = v.KeepaliveInterval.String()
 		}
 
 		if b, err := json.Marshal(resp); err == nil {
@@ -167,15 +156,14 @@ func makeLocalHandler(doc *openapi3.T, fr *fileresolver.Resolver) http.HandlerFu
 			http.Error(w, "not a local session", http.StatusBadRequest)
 			return
 		}
-		resp := localResponse{
+		resp := apiresolver.LocalResponseBody{
 			Command:    v.Command,
 			Term:       v.Term,
 			WorkingDir: v.WorkingDir,
 			Env:        v.Env,
 		}
 		if v.IdleTimeout != nil {
-			s := v.IdleTimeout.String()
-			resp.IdleTimeout = &s
+			resp.IdleTimeout = v.IdleTimeout.String()
 		}
 
 		if b, err := json.Marshal(resp); err == nil {
