@@ -66,9 +66,9 @@ func (s *Server) wsHandler(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		port := sess.Port
-		if port == "" {
-			port = "22"
+		port := s.sshCfg.Port
+		if sess.Port != "" {
+			port = sess.Port
 		}
 		username := sess.Username
 		if username == "" {
@@ -82,9 +82,6 @@ func (s *Server) wsHandler(c *gin.Context) {
 		term := s.sshCfg.Term
 		if sess.Term != "" {
 			term = sess.Term
-		}
-		if term == "" {
-			term = "xterm-256color"
 		}
 		verifyHostKey := s.sshCfg.VerifyHostKey
 		if sess.VerifyHostKey != nil {
@@ -144,9 +141,6 @@ func (s *Server) wsHandler(c *gin.Context) {
 		term := s.localCfg.Term
 		if sess.Term != "" {
 			term = sess.Term
-		}
-		if term == "" {
-			term = "xterm-256color"
 		}
 		localWorkingDir := s.localCfg.WorkingDir
 		if sess.WorkingDir != "" {

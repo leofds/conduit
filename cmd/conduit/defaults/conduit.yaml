@@ -48,6 +48,7 @@ local:
 
 # SSH session
 ssh:
+  port: "22"               # SSH port
   term: xterm-256color     # terminal type requested in the SSH PTY
   idle_timeout: 10m        # close session after this period of inactivity, 0 disables the timeout
   keepalive_interval: 30s  # how often to send a keepalive probe to the server, 0 disables keepalives

@@ -28,34 +28,35 @@ type APIConfig struct {
 
 // SSHConfig holds session-level parameters for SSH connections.
 type SSHConfig struct {
-	Term              string            `yaml:"term"` // terminal type for SSH sessions (default xterm-256color)
+	Port			  string            `yaml:"port"`
+	Term              string            `yaml:"term"`
 	IdleTimeout       time.Duration     `yaml:"idle_timeout"`
 	KeepaliveInterval time.Duration     `yaml:"keepalive_interval"`
 	DialTimeout       time.Duration     `yaml:"dial_timeout"`
-	VerifyHostKey     bool              `yaml:"verify_host_key"`  // enable TOFU host key verification for all SSH hosts
-	TOFUAutoAccept    bool              `yaml:"tofu_auto_accept"` // skip the interactive prompt and auto-accept unknown fingerprints
-	KnownHostsFile    string            `yaml:"known_hosts_file"` // path to the TOFU known-hosts YAML file
+	VerifyHostKey     bool              `yaml:"verify_host_key"`
+	TOFUAutoAccept    bool              `yaml:"tofu_auto_accept"`
+	KnownHostsFile    string            `yaml:"known_hosts_file"`
 	Env               map[string]string `yaml:"env"`
 }
 
 // LocalShellConfig holds shell parameters for local sessions.
 type LocalShellConfig struct {
 	Command     string            `yaml:"command"`
-	Term        string            `yaml:"term"`        // terminal type for local sessions (default xterm-256color)
-	WorkingDir  string            `yaml:"working_dir"` // working directory for local sessions; empty = inherit conduit's cwd
+	Term        string            `yaml:"term"`
+	WorkingDir  string            `yaml:"working_dir"`
 	IdleTimeout time.Duration     `yaml:"idle_timeout"`
 	Env         map[string]string `yaml:"env"`
 }
 
 // Config is the top-level Conduit configuration.
 type Config struct {
-	DebugBanner     bool             `yaml:"debug_banner"`      // show a banner with session details in the terminal
-	Resolver        ResolverType     `yaml:"resolver"`          // "file" (default) or "api"
-	Port            int              `yaml:"port"`              // HTTP listen port (default 8080)
-	Demo            bool             `yaml:"demo"`              // enable the demo page (default true)
-	AllowLocalShell bool             `yaml:"allow_local_shell"` // enable local shell sessions
-	AllowedOrigins  []string         `yaml:"allowed_origins"`   // WebSocket origin allowlist; empty = allow all
-	Local           LocalShellConfig `yaml:"local"`             // local shell session config
+	DebugBanner     bool             `yaml:"debug_banner"`
+	Resolver        ResolverType     `yaml:"resolver"`
+	Port            int              `yaml:"port"`
+	Demo            bool             `yaml:"demo"`
+	AllowLocalShell bool             `yaml:"allow_local_shell"`
+	AllowedOrigins  []string         `yaml:"allowed_origins"`
+	Local           LocalShellConfig `yaml:"local"`
 	API             APIConfig        `yaml:"api"`
 	SSH             SSHConfig        `yaml:"ssh"`
 }
@@ -75,6 +76,7 @@ func Load() (*Config, error) {
 			IdleTimeout: 10 * time.Minute,
 		},
 		SSH: SSHConfig{
+			Port:              "22",
 			Term:              "xterm-256color",
 			IdleTimeout:       10 * time.Minute,
 			KeepaliveInterval: 30 * time.Second,
