@@ -28,11 +28,6 @@
 
 ## Local session
 
-- **Command argument splitting** — `exec.CommandContext(ctx, r.command)` treats the entire
-  command string as the executable name. A value like `"/bin/bash -l"` will fail at runtime
-  because no binary with that exact name exists. Split with `strings.Fields` or wrap in
-  `[]string{"sh", "-c", r.command}` so arguments are handled correctly.
-
 - **Run as a specific user** — Set `cmd.SysProcAttr = &syscall.SysProcAttr{Credential: &syscall.Credential{Uid, Gid}}`
   to run the shell as a configured user/group without requiring full `sudo`.
 

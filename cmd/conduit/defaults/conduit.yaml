@@ -28,13 +28,16 @@ local:
   # command sets the program launched when a local session is requested.
   #
   # Option 1: Direct shell (simplest, no login prompt)
-  # Default "/bin/bash" opens a shell as the user running the conduit process. No password required.
+  #   Default "/bin/bash" opens a shell as the user running the conduit process. No password required.
   #
   # Option 2: Login shell (multi-user, shows a login prompt)
-  # Requires conduit to run as root, or the process user to be granted sudo for /bin/login.
-  # To grant sudo access for a user named conduit, run as root:
-  #   echo "conduit ALL=(root) NOPASSWD: /bin/login" > /etc/sudoers.d/conduit
+  #   Requires conduit to run as root, or the process user to be granted sudo for /bin/login.
+  #   To grant sudo access for a user named conduit, run as root:
+  #     Linux: echo "conduit ALL=(root) NOPASSWD: /bin/login" > /etc/sudoers.d/conduit
+  #     MacOS: echo "conduit ALL=(root) NOPASSWD: /usr/bin/login" > /etc/sudoers.d/conduit
   command: "/bin/bash"
+  #command: "sudo -n /bin/login"   # Login on Linux, requires sudo access to /bin/login
+  #command: "login -p"             # Login on MacOS, requires sudo access to /usr/bin/login
   term: xterm-256color       # terminal type reported to the local shell
   # working_dir sets the working directory for local shell sessions.
   # Leave empty (or omit) to inherit conduit's working directory (the binary's directory).

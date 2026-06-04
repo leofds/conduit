@@ -36,6 +36,7 @@ The demo page also has a hardcoded JWT token (payload `{"sub":"1234567890","name
 - **Pluggable resolver** - map host identifiers to credentials via a YAML file or your own REST API backend
 - **TOFU host key verification** - Trust on First Use fingerprint checking with an interactive confirmation prompt; persisted to a local YAML store
 - **Per-host settings** - security and timing options can be overridden per host in `hosts.yaml` or returned by the API resolver: whether to verify the host key, whether to auto-accept unknown keys on first use, the inactivity timeout, and the SSH keepalive interval
+- **Debug banner** - optional banner with session details displayed in the terminal before the session starts
 - **Idle timeout & keepalive** - configurable inactivity timeout and SSH keepalive probes
 - **Origin allowlist** - restrict which pages may open a WebSocket terminal (CSWSH protection)
 - **OpenAPI spec** - machine-readable contract for the API resolver at [`api/openapi.yaml`](api/openapi.yaml)
@@ -45,8 +46,8 @@ The demo page also has a hardcoded JWT token (payload `{"sub":"1234567890","name
 Conduit reads configs from `./conduit.yaml` or `/etc/conduit/conduit.yaml`. Both files are merged when present; the local file wins on duplicate keys.
 
 ```yaml
-# Show a terminal debug banner before the session starts
-debug: false
+# Show a debug banner with session details before the session starts
+debug_banner: false
 
 # Demo page
 demo: true
@@ -66,16 +67,22 @@ port: 8080
 
 # Local shell session
 local:
+  # Direct shell (no login prompt):
   command: "/bin/bash"
+  # Login on Linux — requires passwordless sudo for /bin/login:
+  #command: "sudo -n /bin/login"
+  # Login on macOS — requires passwordless sudo for /usr/bin/login:
+  #command: "sudo /usr/bin/login -p"
   term: xterm-256color  # terminal type reported to the local shell
-  idle_timeout: 10m     # 0 disables the timeout
+  idle_timeout: 10m     # close session after inactivity, 0 disables
+  working_dir: ""       # empty = inherit conduit's working directory
   env:
     LANG: en_US.UTF-8
     #TZ: UTC
-    #PATH: /usr/local/bin:/usr/bin:/bin
 
 # SSH session
 ssh:
+  port: "22"               # SSH port
   term: xterm-256color     # terminal type requested in the SSH PTY
   idle_timeout: 10m        # close session after this period of inactivity, 0 disables the timeout
   keepalive_interval: 30s  # how often to send a keepalive probe to the server, 0 disables keepalives
@@ -100,15 +107,20 @@ api:
 
 ### Local shell
 
-The `command` field controls what program is launched for local sessions:
+The `command` field controls what program is launched for local sessions. The value is split on whitespace, so arguments are supported (e.g. `"sudo -n /bin/login"` becomes `["sudo", "-n", "/bin/login"]`).
 
-- **`/bin/bash`**: opens a shell directly as the conduit process user, no login prompt. Simplest option, good for single-user or testing setups.
-- **`# /bin/bash`** (commented): shows a login prompt (username + password). Requires conduit to run as root, or the process user to have sudo access to `/bin/login`.
-To grant sudo access for a user named `conduit`, run as root:
+- **`/bin/bash`** (default): opens a shell directly as the conduit process user, no login prompt. Simplest option for single-user or testing setups.
+
+- **`sudo -n /bin/login`** (Linux): shows a login prompt. Requires the conduit process user to have passwordless sudo access to `/bin/login`. As root, run:
   ```bash
   echo "conduit ALL=(root) NOPASSWD: /bin/login" | sudo tee /etc/sudoers.d/conduit
   ```
   Replace `conduit` with the user running the conduit process.
+
+- **`sudo /usr/bin/login -p`** (macOS): shows a login prompt. Requires passwordless sudo access to `/usr/bin/login`. As root, run:
+  ```bash
+  echo "conduit ALL=(root) NOPASSWD: /usr/bin/login" | sudo tee /etc/sudoers.d/conduit
+  ```
 
 - **`env`**: additional environment variables injected into every local shell session, such as `LANG`, `TZ`, or a custom `PATH`.
 

@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/creack/pty"
@@ -50,13 +51,8 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 	}
 
 	var cmd *exec.Cmd
-	if r.cfg.Command != "" {
-		cmd = exec.CommandContext(ctx, r.cfg.Command)
-	} else if os.Getuid() == 0 {
-		cmd = exec.CommandContext(ctx, "/bin/login")
-	} else {
-		cmd = exec.CommandContext(ctx, "sudo", "-n", "/bin/login")
-	}
+	parts := strings.Fields(r.cfg.Command)
+	cmd = exec.CommandContext(ctx, parts[0], parts[1:]...)
 	cmd.Env = os.Environ()
 	for k, v := range r.cfg.Env {
 		cmd.Env = append(cmd.Env, k+"="+v)
@@ -65,7 +61,6 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 	if r.cfg.WorkingDir != "" {
 		cmd.Dir = r.cfg.WorkingDir
 	}
-
 	ptmx, err := pty.Start(cmd)
 	if err != nil {
 		notify("PTY start failed: %v", err)
