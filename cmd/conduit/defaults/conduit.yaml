@@ -3,7 +3,7 @@
 # When both exist they are merged; entries in ./conduit.yaml override /etc/conduit/conduit.yaml.
 
 # Show debug banner and session configuration in the terminal.
-debug: false
+debug_banner: false
 
 # Demo page: set to false to disable the /demo page
 demo: true

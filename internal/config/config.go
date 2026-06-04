@@ -49,7 +49,7 @@ type LocalShellConfig struct {
 
 // Config is the top-level Conduit configuration.
 type Config struct {
-	Debug           bool             `yaml:"debug"`             // show debug banner and session details in the terminal
+	DebugBanner     bool             `yaml:"debug_banner"`      // show a banner with session details in the terminal
 	Resolver        ResolverType     `yaml:"resolver"`          // "file" (default) or "api"
 	Port            int              `yaml:"port"`              // HTTP listen port (default 8080)
 	Demo            bool             `yaml:"demo"`              // enable the demo page (default true)
@@ -64,7 +64,7 @@ type Config struct {
 // Missing files are silently skipped. Returns a default config if none are found.
 func Load() (*Config, error) {
 	cfg := &Config{
-		Debug:           false,
+		DebugBanner:     false,
 		Resolver:        ResolverFile,
 		Port:            8080,
 		Demo:            true,
@@ -74,10 +74,6 @@ func Load() (*Config, error) {
 			Term:        "xterm-256color",
 			IdleTimeout: 10 * time.Minute,
 		},
-		API: APIConfig{
-			ConnectTimeout:  5 * time.Second,
-			ResponseTimeout: 10 * time.Second,
-		},
 		SSH: SSHConfig{
 			Term:              "xterm-256color",
 			IdleTimeout:       10 * time.Minute,
@@ -86,6 +82,10 @@ func Load() (*Config, error) {
 			VerifyHostKey:     true,
 			TOFUAutoAccept:    false,
 			KnownHostsFile:    "./known_hosts.yaml",
+		},
+		API: APIConfig{
+			ConnectTimeout:  5 * time.Second,
+			ResponseTimeout: 10 * time.Second,
 		},
 	}
 	for _, path := range ConduitConfigPaths {
