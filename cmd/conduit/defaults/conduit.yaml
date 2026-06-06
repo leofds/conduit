@@ -3,7 +3,7 @@
 # When both exist they are merged; entries in ./conduit.yaml override /etc/conduit/conduit.yaml.
 
 # Show debug banner and session configuration in the terminal.
-debug_banner: false
+debug_banner: true
 
 # Demo page: set to false to disable the /demo page
 demo: true
@@ -22,6 +22,36 @@ port: 8080
 # allowed_origins:
 #   - http://localhost:8080
 #   - https://myapp.example.com
+
+# HTTP response headers — set custom headers on every response.
+# Use for security headers, CORS, etc. Omit (or set to {}) for no custom headers.
+#
+# Common security headers:
+#
+#   X-Content-Type-Options: nosniff
+#     Prevents the browser from MIME-sniffing the response content type.
+#     Without this, an attacker could disguise an HTML file as a plain-text
+#     upload and have it rendered as a web page, enabling XSS.
+#
+#   X-Frame-Options: DENY
+#     Prevents the page from being rendered inside an <iframe>.
+#     Protects against clickjacking attacks.
+#
+#   Content-Security-Policy: "..."
+#     Restricts which resources (scripts, styles, images, fonts, etc.) the
+#     browser is allowed to load. This is the most powerful XSS defense.
+#     The example below allows only same-origin resources plus inline styles
+#     and scripts (required by xterm.js), WebSocket connections, and blocks
+#     the page from being embedded in a frame.
+#
+#   Referrer-Policy: no-referrer
+#     Controls what info is sent in the Referer header when navigating to
+#     another site. "no-referrer" sends nothing at all.
+# headers:
+#   X-Content-Type-Options: nosniff
+#   X-Frame-Options: DENY
+#   Content-Security-Policy: "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; base-uri 'none'; frame-ancestors 'none'"
+#   Referrer-Policy: no-referrer
 
 # Local shell session
 local:

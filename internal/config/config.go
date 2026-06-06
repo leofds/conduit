@@ -28,7 +28,7 @@ type APIConfig struct {
 
 // SSHConfig holds session-level parameters for SSH connections.
 type SSHConfig struct {
-	Port			  string            `yaml:"port"`
+	Port              string            `yaml:"port"`
 	Term              string            `yaml:"term"`
 	IdleTimeout       time.Duration     `yaml:"idle_timeout"`
 	KeepaliveInterval time.Duration     `yaml:"keepalive_interval"`
@@ -50,26 +50,29 @@ type LocalShellConfig struct {
 
 // Config is the top-level Conduit configuration.
 type Config struct {
-	DebugBanner     bool             `yaml:"debug_banner"`
-	Resolver        ResolverType     `yaml:"resolver"`
-	Port            int              `yaml:"port"`
-	Demo            bool             `yaml:"demo"`
-	AllowLocalShell bool             `yaml:"allow_local_shell"`
-	AllowedOrigins  []string         `yaml:"allowed_origins"`
-	Local           LocalShellConfig `yaml:"local"`
-	API             APIConfig        `yaml:"api"`
-	SSH             SSHConfig        `yaml:"ssh"`
+	DebugBanner     bool              `yaml:"debug_banner"`
+	Resolver        ResolverType      `yaml:"resolver"`
+	Port            int               `yaml:"port"`
+	Demo            bool              `yaml:"demo"`
+	AllowLocalShell bool              `yaml:"allow_local_shell"`
+	AllowedOrigins  []string          `yaml:"allowed_origins"`
+	Headers         map[string]string `yaml:"headers"` // custom HTTP response headers; empty = none
+	Local           LocalShellConfig  `yaml:"local"`
+	API             APIConfig         `yaml:"api"`
+	SSH             SSHConfig         `yaml:"ssh"`
 }
 
 // Load reads conduit.yaml from the standard paths and returns the merged config.
 // Missing files are silently skipped. Returns a default config if none are found.
 func Load() (*Config, error) {
 	cfg := &Config{
-		DebugBanner:     false,
+		DebugBanner:     true,
 		Resolver:        ResolverFile,
 		Port:            8080,
 		Demo:            true,
 		AllowLocalShell: true,
+		AllowedOrigins:  nil,
+		Headers:         nil,
 		Local: LocalShellConfig{
 			Command:     "/bin/bash",
 			Term:        "xterm-256color",

@@ -198,7 +198,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 
 	if s.debugBanner {
 		log.Printf("Debug banner enabled")
-		s.writeDebugBanner(wsConn, host, bannerCfg)
+		s.writeDebugBanner(wsConn, host, bannerCfg, cols)
 	}
 
 	runner.Run(c.Request.Context(), wsConn)

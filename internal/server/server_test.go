@@ -20,7 +20,7 @@ func (stubResolver) Resolve(_ resolver.Request) (resolver.SessionConfig, error) 
 }
 
 func newTestServer() *Server {
-	return New(stubResolver{})
+	return New(stubResolver{}, nil)
 }
 
 func TestHealthEndpoint(t *testing.T) {

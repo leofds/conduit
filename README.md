@@ -74,6 +74,14 @@ port: 8080
 #   - http://localhost:8080
 #   - https://myapp.example.com
 
+# Custom HTTP response headers (security, CORS, etc.)
+# Omit or set to {} for no custom headers.
+headers:
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Content-Security-Policy: "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; base-uri 'none'; frame-ancestors 'none'"
+  Referrer-Policy: no-referrer
+
 # Local shell session
 local:
   # Direct shell (no login prompt):
@@ -132,6 +140,20 @@ The `command` field controls what program is launched for local sessions. The va
   ```
 
 - **`env`**: additional environment variables injected into every local shell session, such as `LANG`, `TZ`, or a custom `PATH`.
+
+### HTTP response headers
+
+The `headers` map in `conduit.yaml` lets you set arbitrary HTTP headers on every response. This is useful for security headers, CORS, or any other custom header.
+
+```yaml
+headers:
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Content-Security-Policy: "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; base-uri 'none'; frame-ancestors 'none'"
+  Referrer-Policy: no-referrer
+```
+
+Omit `headers` (or set it to `{}`) for no custom headers. This is the default.
 
 ## Resolvers
 

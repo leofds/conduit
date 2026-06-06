@@ -28,13 +28,15 @@ type Server struct {
 	localCfg       config.LocalShellConfig
 	allowedOrigins []string
 	knownHosts     *knownhosts.Store
+	httpHeaders    map[string]string
 }
 
-func New(r resolver.Resolver) *Server {
+func New(r resolver.Resolver, headers map[string]string) *Server {
 	gin.SetMode(gin.ReleaseMode)
 	gin := gin.Default()
 
-	s := &Server{router: gin, resolver: r, allowLocal: true, demo: true}
+	s := &Server{router: gin, resolver: r, allowLocal: true, demo: true, httpHeaders: headers}
+	s.router.Use(securityHeaders(headers))
 	s.registerRoutes()
 
 	return s
