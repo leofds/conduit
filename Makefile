@@ -27,7 +27,7 @@ release:
 		echo "Building $$GOOS/$$GOARCH..."; \
 		mkdir -p $$STAGE; \
 		GOOS=$$GOOS GOARCH=$$GOARCH go build $(LDFLAGS) -o $$STAGE/conduit $(CMD); \
-		cp README.md cmd/conduit/defaults/conduit.yaml cmd/conduit/defaults/hosts.yaml $$STAGE/; \
+		cp README.md DOCS.md cmd/conduit/defaults/conduit.yaml cmd/conduit/defaults/hosts.yaml $$STAGE/; \
 		tar -czf $$STAGE.tar.gz -C dist $$(basename $$STAGE) && rm -rf $$STAGE; \
 	done
 	@echo "Release archives ready in dist/"

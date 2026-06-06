@@ -1,113 +1,52 @@
 # Conduit main configuration
-# Place this file at ./conduit.yaml (next to the binary) or /etc/conduit/conduit.yaml.
-# When both exist they are merged; entries in ./conduit.yaml override /etc/conduit/conduit.yaml.
-
-# Show debug banner and session configuration in the terminal.
 debug_banner: true
-
-# Demo page: set to false to disable the /demo page
 demo: true
-
-# Allow local shell sessions
-allow_local_shell: true
-
-# HTTP listen port
 port: 8080
+allow_local_shell: true
+resolver: file
 
-# WebSocket origin allowlist — restrict which pages may open a terminal.
-# List the exact Origins (scheme + host + port) that are permitted.
-# Leave empty (or omit) to allow all origins; suitable when running behind a
-# reverse proxy that already enforces access control.
-#
-# allowed_origins:
-#   - http://localhost:8080
-#   - https://myapp.example.com
-
-# HTTP response headers — set custom headers on every response.
-# Use for security headers, CORS, etc. Omit (or set to {}) for no custom headers.
-#
-# Common security headers:
-#
-#   X-Content-Type-Options: nosniff
-#     Prevents the browser from MIME-sniffing the response content type.
-#     Without this, an attacker could disguise an HTML file as a plain-text
-#     upload and have it rendered as a web page, enabling XSS.
-#
-#   X-Frame-Options: DENY
-#     Prevents the page from being rendered inside an <iframe>.
-#     Protects against clickjacking attacks.
-#
-#   Content-Security-Policy: "..."
-#     Restricts which resources (scripts, styles, images, fonts, etc.) the
-#     browser is allowed to load. This is the most powerful XSS defense.
-#     The example below allows only same-origin resources plus inline styles
-#     and scripts (required by xterm.js), WebSocket connections, and blocks
-#     the page from being embedded in a frame.
-#
-#   Referrer-Policy: no-referrer
-#     Controls what info is sent in the Referer header when navigating to
-#     another site. "no-referrer" sends nothing at all.
+# Custom HTTP response headers (security, CORS, etc.)
 # headers:
 #   X-Content-Type-Options: nosniff
 #   X-Frame-Options: DENY
 #   Content-Security-Policy: "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; base-uri 'none'; frame-ancestors 'none'"
 #   Referrer-Policy: no-referrer
 
-# Terminal options passed to the xterm.js Terminal() constructor.
-# Any xterm.js option is supported. See:
-#   https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/
+# xterm.js Terminal constructor options
 terminal_options:
   scrollback: 5000
   theme:
     background: '#1e1e1e'
     foreground: '#d4d4d4'
 
-# Local shell session
+# WebSocket origin allowlist
+# allowed_origins:
+#   - http://localhost:8080
+#   - https://myapp.example.com
+
+# Local session configuration
 local:
-  # command sets the program launched when a local session is requested.
-  #
-  # Option 1: Direct shell (simplest, no login prompt)
-  #   Default "/bin/bash" opens a shell as the user running the conduit process. No password required.
-  #
-  # Option 2: Login shell (multi-user, shows a login prompt)
-  #   Requires conduit to run as root, or the process user to be granted sudo for /bin/login.
-  #   To grant sudo access for a user named conduit, run as root:
-  #     Linux: echo "conduit ALL=(root) NOPASSWD: /bin/login" > /etc/sudoers.d/conduit
-  #     MacOS: echo "conduit ALL=(root) NOPASSWD: /usr/bin/login" > /etc/sudoers.d/conduit
   command: "/bin/bash"
-  #command: "sudo -n /bin/login"   # Login on Linux, requires sudo access to /bin/login
-  #command: "login -p"             # Login on MacOS, requires sudo access to /usr/bin/login
-  term: xterm-256color       # terminal type reported to the local shell
-  # working_dir sets the working directory for local shell sessions.
-  # Leave empty (or omit) to inherit conduit's working directory (the binary's directory).
+  term: xterm-256color
+  idle_timeout: 10m
   working_dir: ""
-  idle_timeout: 10m  # close session after this period of inactivity, 0 disables the timeout
-  # env defines additional environment variables injected into every local session.
   env:
     LANG: en_US.UTF-8
-    #TZ: UTC
-    #PATH: /usr/local/bin:/usr/bin:/bin
 
-# SSH session
+# SSH session configuration
 ssh:
-  port: "22"               # SSH port
-  term: xterm-256color     # terminal type requested in the SSH PTY
-  idle_timeout: 10m        # close session after this period of inactivity, 0 disables the timeout
-  keepalive_interval: 30s  # how often to send a keepalive probe to the server, 0 disables keepalives
-  dial_timeout: 10s        # TCP+SSH handshake timeout, 0 means no timeout
-  verify_host_key: true    # enable TOFU host key verification for all SSH connections
-  tofu_auto_accept: false  # skip the interactive fingerprint prompt and auto-accept unknown host keys
-  known_hosts_file: ./known_hosts.yaml  # TOFU host-key fingerprint store
-  # env defines environment variables forwarded to the SSH server via Setenv.
-  # The SSH server must allow them with AcceptEnv.
+  port: "22"
+  term: xterm-256color
+  idle_timeout: 10m
+  keepalive_interval: 30s
+  dial_timeout: 10s
+  verify_host_key: true
+  tofu_auto_accept: false
+  known_hosts_file: ./known_hosts.yaml
   env:
     LANG: en_US.UTF-8
 
-# Resolver to use: "file" (default) or "api"
-resolver: file
-
-# API resolver configuration (used when resolver: api)
-# See api/openapi.yaml for the full endpoint contract.
+# API resolver configuration
 api:
   url: http://localhost:8040/conduit/resolve
   connect_timeout: 5s
