@@ -51,6 +51,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 			Value:    "",
 			Path:     "/",
 			MaxAge:   -1,
+			HttpOnly: true,
 			SameSite: http.SameSiteLaxMode,
 		})
 	}

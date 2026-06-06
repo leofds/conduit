@@ -84,17 +84,6 @@
   Replace with a custom recovery handler that returns a generic `500 Internal Server Error`
   and logs the stack server-side only.
 
-- **HTTP security headers** — No security headers are set on any response. Even behind nginx,
-  the app should own its own headers as a defense-in-depth layer. Add at minimum:
-  `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
-  `Content-Security-Policy` (restrict sources to `'self'` + the xterm CDN if any),
-  and `Referrer-Policy: no-referrer`. A single Gin middleware can handle all of these.
-
-- **Cookie missing `HttpOnly` flag** — The `conduit_session` cookie is cleared server-side in
-  `ws.go` without the `HttpOnly` flag, leaving it readable by JavaScript. If an XSS
-  vulnerability exists anywhere on the origin, the token can be stolen. Set `HttpOnly: true`
-  on the server-side cookie operations.
-
 - **Log injection via `host` parameter** — `host` from the URL path parameter is written
   directly to log output (e.g. `log.Printf("resolver error host=%s …", host, …)`). A crafted
   host value containing `\n`, ANSI escape codes, or log-format characters can forge log
