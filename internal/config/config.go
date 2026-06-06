@@ -56,7 +56,8 @@ type Config struct {
 	Demo            bool              `yaml:"demo"`
 	AllowLocalShell bool              `yaml:"allow_local_shell"`
 	AllowedOrigins  []string          `yaml:"allowed_origins"`
-	Headers         map[string]string `yaml:"headers"` // custom HTTP response headers; empty = none
+	Headers         map[string]string `yaml:"headers"`
+	TerminalOptions map[string]any    `yaml:"terminal_options"`
 	Local           LocalShellConfig  `yaml:"local"`
 	API             APIConfig         `yaml:"api"`
 	SSH             SSHConfig         `yaml:"ssh"`
@@ -73,6 +74,13 @@ func Load() (*Config, error) {
 		AllowLocalShell: true,
 		AllowedOrigins:  nil,
 		Headers:         nil,
+		TerminalOptions: map[string]any{
+			"scrollback": 5000,
+			"theme": map[string]any{
+				"background": "#1e1e1e",
+				"foreground": "#d4d4d4",
+			},
+		},
 		Local: LocalShellConfig{
 			Command:     "/bin/bash",
 			Term:        "xterm-256color",

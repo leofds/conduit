@@ -82,6 +82,14 @@ headers:
   Content-Security-Policy: "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; base-uri 'none'; frame-ancestors 'none'"
   Referrer-Policy: no-referrer
 
+# Terminal options passed to the xterm.js constructor
+# Any xterm.js ITerminalOptions is supported
+terminal_options:
+  scrollback: 5000
+  theme:
+    background: '#1e1e1e'
+    foreground: '#d4d4d4'
+
 # Local shell session
 local:
   # Direct shell (no login prompt):
@@ -154,6 +162,23 @@ headers:
 ```
 
 Omit `headers` (or set it to `{}`) for no custom headers. This is the default.
+
+### Terminal options
+
+The `terminal_options` map in `conduit.yaml` is passed directly to the `Terminal()` constructor in xterm.js. Any option from the [xterm.js ITerminalOptions interface](https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/) is supported.
+
+```yaml
+terminal_options:
+  scrollback: 5000
+  theme:
+    background: '#1e1e1e'
+    foreground: '#d4d4d4'
+```
+
+Default values are applied when the option is omitted:
+- `scrollback`: 5000
+- `theme.background`: `#1e1e1e`
+- `theme.foreground`: `#d4d4d4`
 
 ## Resolvers
 

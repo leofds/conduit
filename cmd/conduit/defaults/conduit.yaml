@@ -53,6 +53,15 @@ port: 8080
 #   Content-Security-Policy: "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; base-uri 'none'; frame-ancestors 'none'"
 #   Referrer-Policy: no-referrer
 
+# Terminal options passed to the xterm.js Terminal() constructor.
+# Any xterm.js option is supported. See:
+#   https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/
+terminal_options:
+  scrollback: 5000
+  theme:
+    background: '#1e1e1e'
+    foreground: '#d4d4d4'
+
 # Local shell session
 local:
   # command sets the program launched when a local session is requested.

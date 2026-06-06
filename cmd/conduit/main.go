@@ -138,6 +138,7 @@ func main() {
 	srv.SetLocalConfig(cfg.Local)
 	srv.SetDemo(cfg.Demo)
 	srv.SetSSHConfig(cfg.SSH)
+	srv.SetTerminalOptions(cfg.TerminalOptions)
 	srv.SetAllowedOrigins(cfg.AllowedOrigins)
 
 	ks, err := knownhosts.New(cfg.SSH.KnownHostsFile)

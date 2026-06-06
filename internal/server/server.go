@@ -3,9 +3,12 @@ package server
 import (
 	"context"
 	"embed"
+	"encoding/json"
 	"io/fs"
 	"net/http"
+	"strings"
 	"time"
+	"log"
 
 	"github.com/gin-gonic/gin"
 
@@ -18,17 +21,18 @@ import (
 var staticFiles embed.FS
 
 type Server struct {
-	router         *gin.Engine
-	httpServer     *http.Server
-	resolver       resolver.Resolver
-	allowLocal     bool
-	demo           bool
-	debugBanner    bool
-	sshCfg         config.SSHConfig
-	localCfg       config.LocalShellConfig
-	allowedOrigins []string
-	knownHosts     *knownhosts.Store
-	httpHeaders    map[string]string
+	router          *gin.Engine
+	httpServer      *http.Server
+	resolver        resolver.Resolver
+	allowLocal      bool
+	demo            bool
+	debugBanner     bool
+	terminalOptions map[string]any
+	sshCfg          config.SSHConfig
+	localCfg        config.LocalShellConfig
+	allowedOrigins  []string
+	knownHosts      *knownhosts.Store
+	httpHeaders     map[string]string
 }
 
 func New(r resolver.Resolver, headers map[string]string) *Server {
@@ -40,6 +44,11 @@ func New(r resolver.Resolver, headers map[string]string) *Server {
 	s.registerRoutes()
 
 	return s
+}
+
+// SetTerminalOptions sets the options passed to the xterm.js Terminal constructor.
+func (s *Server) SetTerminalOptions(opts map[string]any) {
+	s.terminalOptions = opts
 }
 
 // SetAllowLocal controls whether local shell sessions are permitted.
@@ -110,7 +119,15 @@ func (s *Server) registerRoutes() {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
+		content := string(data)
+		jsonBytes, err := json.Marshal(s.terminalOptions)
+		if err == nil {
+			content = strings.ReplaceAll(content, "/*CONDUIT_TERMINAL_OPTS*/", string(jsonBytes))
+		} else {
+			log.Printf("Failed to marshal terminal options: %v", err)
+			content = strings.ReplaceAll(content, "/*CONDUIT_TERMINAL_OPTS*/", `{}`)
+		}
+		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(content))
 	})
 
 	sub, _ := fs.Sub(staticFiles, "static")
