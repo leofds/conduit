@@ -32,6 +32,7 @@ type Config struct {
 	TOFUAutoAccept    bool               // skip the interactive prompt and auto-accept unknown fingerprints
 	KnownFingerprint  string             // expected SHA256 fingerprint; empty = first-use (TOFU)
 	SaveHostKey       func(string) error // called on first use to persist the fingerprint; may be nil
+	DebugBanner       bool               // if true, rejected env vars are shown in the terminal
 }
 
 type Runner struct {
@@ -220,6 +221,9 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 	for k, v := range r.cfg.Env {
 		if err := sesh.Setenv(k, v); err != nil {
 			log.Printf("SSH setenv %s: %v (server may have rejected it)", k, err)
+			if r.cfg.DebugBanner {
+				wsConn.WriteMessage(websocket.BinaryMessage, []byte(fmt.Sprintf("\x1b[31mEnv rejected: %s=%s\x1b[0m\r\n", k, v))) //nolint:errcheck
+			}
 		}
 	}
 

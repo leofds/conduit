@@ -128,6 +128,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 			KnownFingerprint:  knownFP,
 			SaveHostKey:       saveHostKey,
 			Env:               sshEnv,
+			DebugBanner:       s.debugBanner,
 		}
 		runner = sessionssh.New(sshCfg, cols, rows)
 		bannerCfg = sshCfg
