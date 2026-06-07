@@ -88,9 +88,9 @@ func (s *Server) wsHandler(c *gin.Context) {
 		if sess.VerifyHostKey != nil {
 			verifyHostKey = *sess.VerifyHostKey
 		}
-		tofuAutoAccept := s.sshCfg.TOFUAutoAccept
-		if sess.TOFUAutoAccept != nil {
-			tofuAutoAccept = *sess.TOFUAutoAccept
+		autoAcceptHostKey := s.sshCfg.AutoAcceptHostKey
+		if sess.AutoAcceptHostKey != nil {
+			autoAcceptHostKey = *sess.AutoAcceptHostKey
 		}
 		idleTimeout := s.sshCfg.IdleTimeout
 		if sess.IdleTimeout != nil {
@@ -125,7 +125,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 			KeepaliveInterval: keepaliveInterval,
 			DialTimeout:       s.sshCfg.DialTimeout,
 			VerifyHostKey:     verifyHostKey,
-			TOFUAutoAccept:    tofuAutoAccept,
+			AutoAcceptHostKey: autoAcceptHostKey,
 			KnownFingerprint:  knownFP,
 			SaveHostKey:       saveHostKey,
 			Env:               sshEnv,

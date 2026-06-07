@@ -257,7 +257,7 @@ ssh:
   keepalive_interval: 30s
   dial_timeout: 10s
   verify_host_key: true
-  tofu_auto_accept: false
+  auto_accept_host_key: false
   known_hosts_file: ./known_hosts.yaml
   env:
     LANG: en_US.UTF-8
@@ -315,7 +315,7 @@ conduit -R <host>
 
 The next connection to that host will prompt to trust the new fingerprint.
 
-### `tofu_auto_accept`
+### `auto_accept_host_key`
 
 Default: `false`
 
@@ -381,7 +381,7 @@ hosts:
     port: 22
     term: xterm-256color
     verify_host_key: true
-    tofu_auto_accept: false
+    auto_accept_host_key: false
     idle_timeout: 10m
     keepalive_interval: 30s
     env:
@@ -400,7 +400,7 @@ hosts:
 | `private_key_file` | string | no | `""` | Path to PEM private key (e.g. `~/.ssh/id_rsa`) |
 | `term` | string | no | `ssh.term` | Terminal type override |
 | `verify_host_key` | bool | no | `ssh.verify_host_key` | Host key verification override |
-| `tofu_auto_accept` | bool | no | `ssh.tofu_auto_accept` | Auto-accept fingerprint override |
+| `auto_accept_host_key` | bool | no | `ssh.auto_accept_host_key` | Auto-accept fingerprint override |
 | `idle_timeout` | duration | no | `ssh.idle_timeout` | Idle timeout override |
 | `keepalive_interval` | duration | no | `ssh.keepalive_interval` | Keepalive interval override |
 | `env` | map\[string\]string | no | `ssh.env` | Env vars merged with `ssh.env`; host values override |
@@ -428,7 +428,7 @@ Response:
   "private_key_file": "",
   "term": "xterm-256color",
   "verify_host_key": true,
-  "tofu_auto_accept": false,
+  "auto_accept_host_key": false,
   "idle_timeout": "10m",
   "keepalive_interval": "30s",
   "env": {

@@ -77,7 +77,7 @@ func (s *Server) writeDebugBanner(wsConn *websocket.Conn, host string, cfg any, 
 		write(fmt.Sprintf("Keepalive interval: %s%s%s\r\n", valueColor, sess.KeepaliveInterval, reset))
 		write(fmt.Sprintf("Dial timeout: %s%s%s\r\n", valueColor, sess.DialTimeout, reset))
 		write(fmt.Sprintf("Verify host key: %s%t%s\r\n", valueColor, sess.VerifyHostKey, reset))
-		write(fmt.Sprintf("TOFU auto accept: %s%t%s\r\n", valueColor, sess.TOFUAutoAccept, reset))
+		write(fmt.Sprintf("Auto accept host key: %s%t%s\r\n", valueColor, sess.AutoAcceptHostKey, reset))
 		write("Env: ")
 		first := true
 		for k, v := range sess.Env {

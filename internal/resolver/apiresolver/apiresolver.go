@@ -74,7 +74,7 @@ type SSHResponseBody struct {
 	Env               map[string]string `json:"env,omitempty"`
 	IdleTimeout       string            `json:"idle_timeout,omitempty"`
 	KeepaliveInterval string            `json:"keepalive_interval,omitempty"`
-	TOFUAutoAccept    *bool             `json:"tofu_auto_accept,omitempty"`
+	AutoAcceptHostKey *bool             `json:"auto_accept_host_key,omitempty"`
 	VerifyHostKey     *bool             `json:"verify_host_key,omitempty"`
 }
 
@@ -183,7 +183,7 @@ func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error)
 		PrivateKeyFile:    result.PrivateKeyFile,
 		Term:              result.Term,
 		Env:               result.Env,
-		TOFUAutoAccept:    result.TOFUAutoAccept,
+		AutoAcceptHostKey: result.AutoAcceptHostKey,
 		VerifyHostKey:     result.VerifyHostKey,
 		IdleTimeout:       idleTimeout,
 		KeepaliveInterval: keepaliveInterval,

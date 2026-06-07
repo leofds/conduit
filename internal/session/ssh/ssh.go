@@ -29,7 +29,7 @@ type Config struct {
 	KeepaliveInterval time.Duration      // interval for sending SSH keepalive messages; 0 = disable
 	DialTimeout       time.Duration      // timeout for establishing the SSH connection
 	VerifyHostKey     bool               // enable TOFU host key verification
-	TOFUAutoAccept    bool               // skip the interactive prompt and auto-accept unknown fingerprints
+	AutoAcceptHostKey bool               // skip the interactive prompt and auto-accept unknown fingerprints
 	KnownFingerprint  string             // expected SHA256 fingerprint; empty = first-use (TOFU)
 	SaveHostKey       func(string) error // called on first use to persist the fingerprint; may be nil
 	DebugBanner       bool               // if true, rejected env vars are shown in the terminal
@@ -82,7 +82,7 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 		cfg.HostKeyCallback = func(hostname string, _ net.Addr, key gossh.PublicKey) error {
 			actual := gossh.FingerprintSHA256(key)
 			if r.cfg.KnownFingerprint == "" {
-				if r.cfg.TOFUAutoAccept {
+				if r.cfg.AutoAcceptHostKey {
 					// Auto-accept: trust and persist without prompting.
 					log.Printf("SSH TOFU: auto-accepting %s with fingerprint %s", hostname, actual)
 				} else {

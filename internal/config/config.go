@@ -12,13 +12,6 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-type ResolverType string
-
-const (
-	ResolverFile ResolverType = "file"
-	ResolverAPI  ResolverType = "api"
-)
-
 // APIConfig holds the connection parameters for the API resolver.
 type APIConfig struct {
 	URL             string        `yaml:"url"`
@@ -34,7 +27,7 @@ type SSHConfig struct {
 	KeepaliveInterval time.Duration     `yaml:"keepalive_interval"`
 	DialTimeout       time.Duration     `yaml:"dial_timeout"`
 	VerifyHostKey     bool              `yaml:"verify_host_key"`
-	TOFUAutoAccept    bool              `yaml:"tofu_auto_accept"`
+	AutoAcceptHostKey bool              `yaml:"auto_accept_host_key"`
 	KnownHostsFile    string            `yaml:"known_hosts_file"`
 	Env               map[string]string `yaml:"env"`
 }
@@ -63,10 +56,28 @@ type Config struct {
 	SSH             SSHConfig         `yaml:"ssh"`
 }
 
-// Load reads conduit.yaml from the standard paths and returns the merged config.
-// Missing files are silently skipped. Returns a default config if none are found.
-func Load() (*Config, error) {
-	cfg := &Config{
+type fileReader interface {
+	ReadFile(path string) ([]byte, error)
+}
+
+type yamlDecoder interface {
+	Unmarshal(data []byte, out any) error
+}
+
+type yamlDecoderFunc func([]byte, any) error
+
+func (f yamlDecoderFunc) Unmarshal(data []byte, out any) error {
+	return f(data, out)
+}
+
+type osFileReader struct{}
+
+func (osFileReader) ReadFile(path string) ([]byte, error) {
+	return os.ReadFile(path)
+}
+
+func defaultConfig() *Config {
+	return &Config{
 		DebugBanner:     true,
 		Resolver:        ResolverFile,
 		Port:            8080,
@@ -93,7 +104,7 @@ func Load() (*Config, error) {
 			KeepaliveInterval: 30 * time.Second,
 			DialTimeout:       10 * time.Second,
 			VerifyHostKey:     true,
-			TOFUAutoAccept:    false,
+			AutoAcceptHostKey: false,
 			KnownHostsFile:    "./known_hosts.yaml",
 		},
 		API: APIConfig{
@@ -101,18 +112,30 @@ func Load() (*Config, error) {
 			ResponseTimeout: 10 * time.Second,
 		},
 	}
-	for _, path := range ConduitConfigPaths {
-		data, err := os.ReadFile(path)
+}
+
+func load(paths []string, read fileReader, decode yamlDecoder) (*Config, error) {
+	cfg := defaultConfig()
+
+	for _, path := range paths {
+		data, err := read.ReadFile(path)
 		if err != nil {
 			if os.IsNotExist(err) {
 				continue
 			}
 			return nil, fmt.Errorf("config: reading %s: %w", path, err)
 		}
-		if err := yaml.Unmarshal(data, cfg); err != nil {
+		if err := decode.Unmarshal(data, cfg); err != nil {
 			return nil, fmt.Errorf("config: parsing %s: %w", path, err)
 		}
 		log.Printf("config: loaded from %s", path)
 	}
+
 	return cfg, nil
+}
+
+// Load reads conduit.yaml from the standard paths and returns the merged config.
+// Missing files are silently skipped. Returns a default config if none are found.
+func Load() (*Config, error) {
+	return load(ConduitConfigPaths, osFileReader{}, yamlDecoderFunc(yaml.Unmarshal))
 }

@@ -22,7 +22,7 @@ type hostEntry struct {
 	PrivateKeyFile    string            `yaml:"private_key_file"`
 	Term              string            `yaml:"term"`
 	Env               map[string]string `yaml:"env"`
-	TOFUAutoAccept    *bool             `yaml:"tofu_auto_accept"`
+	AutoAcceptHostKey *bool             `yaml:"auto_accept_host_key"`
 	VerifyHostKey     *bool             `yaml:"verify_host_key"`
 	IdleTimeout       *time.Duration    `yaml:"idle_timeout"`
 	KeepaliveInterval *time.Duration    `yaml:"keepalive_interval"`
@@ -112,7 +112,7 @@ func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error)
 		PrivateKeyFile:    entry.PrivateKeyFile,
 		Term:              entry.Term,
 		Env:               entry.Env,
-		TOFUAutoAccept:    entry.TOFUAutoAccept,
+		AutoAcceptHostKey: entry.AutoAcceptHostKey,
 		VerifyHostKey:     entry.VerifyHostKey,
 		IdleTimeout:       entry.IdleTimeout,
 		KeepaliveInterval: entry.KeepaliveInterval,

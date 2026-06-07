@@ -54,7 +54,7 @@ paths:
                 private_key_file: /home/user/.ssh/id_rsa
                 env:
                   LANG: en_US.UTF-8
-                tofu_auto_accept: false
+                auto_accept_host_key: false
         "401":
           description: Missing or invalid bearer token
         "403":
@@ -141,12 +141,12 @@ components:
             type: string
           example:
             LANG: en_US.UTF-8
-        tofu_auto_accept:
+        auto_accept_host_key:
           type: boolean
           description: |
             Per-host override for TOFU auto-accept.  When `true`, Conduit skips
             the interactive fingerprint confirmation prompt for this host.
-            Omit to fall back to the global `tofu_auto_accept` setting in
+            Omit to fall back to the global `auto_accept_host_key` setting in
             conduit.yaml.
           example: false
         verify_host_key:

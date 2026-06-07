@@ -11,7 +11,7 @@ hosts:
     port: 22                  # defaults to 22 when omitted
     private_key_file: ""      # path to PEM private key (e.g. /home/user/.ssh/id_rsa)
     verify_host_key: true     # override the global verify_host_key for this host only
-    tofu_auto_accept: false   # override the global tofu_auto_accept for this host only
+    auto_accept_host_key: false   # override the global auto_accept_host_key for this host only
     term: xterm-256color      # override the global term for this host only
     idle_timeout: 10m         # override the global idle_timeout for this host only
     keepalive_interval: 30s   # override the global keepalive_interval for this host only

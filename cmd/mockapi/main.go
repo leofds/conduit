@@ -106,15 +106,15 @@ func makeSSHHandler(doc *openapi3.T, fr *fileresolver.Resolver) http.HandlerFunc
 			return
 		}
 		resp := apiresolver.SSHResponseBody{
-			Address:        v.Address,
-			Port:           v.Port,
-			Username:       v.Username,
-			Password:       v.Password,
-			PrivateKeyFile: v.PrivateKeyFile,
-			Term:           v.Term,
-			Env:            v.Env,
-			TOFUAutoAccept: v.TOFUAutoAccept,
-			VerifyHostKey:  v.VerifyHostKey,
+			Address:           v.Address,
+			Port:              v.Port,
+			Username:          v.Username,
+			Password:          v.Password,
+			PrivateKeyFile:    v.PrivateKeyFile,
+			Term:              v.Term,
+			Env:               v.Env,
+			AutoAcceptHostKey: v.AutoAcceptHostKey,
+			VerifyHostKey:     v.VerifyHostKey,
 		}
 		if v.IdleTimeout != nil {
 			resp.IdleTimeout = v.IdleTimeout.String()

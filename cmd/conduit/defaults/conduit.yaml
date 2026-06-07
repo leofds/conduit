@@ -41,7 +41,7 @@ ssh:
   keepalive_interval: 30s
   dial_timeout: 10s
   verify_host_key: true
-  tofu_auto_accept: false
+  auto_accept_host_key: false
   known_hosts_file: ./known_hosts.yaml
   env:
     LANG: en_US.UTF-8

@@ -18,7 +18,7 @@ type SSHConfig struct {
 	PrivateKeyFile    string
 	Term              string
 	Env               map[string]string
-	TOFUAutoAccept    *bool
+	AutoAcceptHostKey *bool
 	VerifyHostKey     *bool
 	IdleTimeout       *time.Duration
 	KeepaliveInterval *time.Duration
