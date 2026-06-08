@@ -38,8 +38,8 @@ import (
 	conduitapi "github.com/leofds/conduit/api"
 	"github.com/leofds/conduit/internal/config"
 	"github.com/leofds/conduit/internal/resolver"
-	"github.com/leofds/conduit/internal/resolver/fileresolver"
 	"github.com/leofds/conduit/internal/resolver/apiresolver"
+	"github.com/leofds/conduit/internal/resolver/fileresolver"
 )
 
 // These structs mirror apiresolver's request/response bodies.
@@ -200,7 +200,7 @@ func main() {
 	chdirToBin()
 	addr := ":8040"
 	endpoint := "/conduit/resolve"
-	cfg, err := config.Load()
+	cfg, err := config.Load(config.ConduitConfigPaths)
 	if err != nil {
 		log.Fatalf("mockapi: load config: %v", err)
 	}

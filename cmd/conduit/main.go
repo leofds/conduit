@@ -80,21 +80,47 @@ func chdirToBin() {
 	}
 }
 
+func parseFlags(args []string) (resetKnownHost string, writeDefaultFiles bool, remainingArgs []string, err error) {
+	fs := flag.NewFlagSet("conduit", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+
+	var reset string
+	var writeDefaults bool
+	fs.StringVar(&reset, "reset-known-host", "", "remove the stored SSH host key fingerprint for the given host and exit")
+	fs.StringVar(&reset, "R", "", "short alias for -reset-known-host")
+	fs.BoolVar(&writeDefaults, "write-defaults", false, "create conduit.yaml and hosts.yaml from embedded defaults if no config files are found in the standard locations")
+	fs.BoolVar(&writeDefaults, "W", false, "short alias for -write-defaults")
+
+	if err := fs.Parse(args); err != nil {
+		return "", false, nil, err
+	}
+
+	return reset, writeDefaults, fs.Args(), nil
+}
+
 func main() {
-	resetKnownHost := flag.String("R", "", "remove the stored SSH host key fingerprint for the given host and exit")
-	flag.Parse()
+	resetKnownHost, writeDefaultFiles, remainingArgs, err := parseFlags(os.Args[1:])
+	if err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return
+		}
+		log.Fatalf("Failed to parse flags: %v", err)
+	}
 
 	log.Printf("Conduit %s", version.Version)
 	chdirToBin()
-	writeDefaultsIfMissing()
+	if writeDefaultFiles {
+		writeDefaultsIfMissing()
+		return
+	}
 
 	cfg, err := config.Load(config.ConduitConfigPaths)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	if *resetKnownHost != "" {
-		host := strings.TrimSpace(*resetKnownHost)
+	if resetKnownHost != "" {
+		host := strings.TrimSpace(resetKnownHost)
 		ks, err := knownhosts.New(cfg.SSH.KnownHostsFile)
 		if err != nil {
 			log.Fatalf("Known hosts: %v", err)
@@ -107,8 +133,8 @@ func main() {
 	}
 
 	// Ensure no unexpected flags remain before starting the server.
-	if flag.NArg() > 0 {
-		log.Fatalf("unexpected arguments: %v", flag.Args())
+	if len(remainingArgs) > 0 {
+		log.Fatalf("unexpected arguments: %v", remainingArgs)
 	}
 
 	var r resolver.Resolver

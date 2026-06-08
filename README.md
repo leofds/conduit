@@ -30,11 +30,20 @@ The demo page also has a hardcoded JWT token (payload `{"sub":"1234567890","name
 
 ### Command-line flags
 
-- **`-R <host>`** — remove the stored SSH host key fingerprint for the given host from the TOFU known-hosts file and exit.
+- **`-R <host>`** / **`--reset-known-host <host>`** — remove the stored SSH host key fingerprint for the given host from the TOFU known-hosts file and exit.
   Useful after a server's host key has changed (e.g. after a reinstall). The next connection to that host will prompt to trust the new fingerprint.
 
   ```bash
   conduit -R myserver
+  conduit --reset-known-host myserver
+  ```
+
+- **`-W`** / **`--write-defaults`** — create `conduit.yaml` and `hosts.yaml` from the embedded defaults when no standard config files are present.
+  This is useful for bootstrapping a new installation or for generating example config files in the current working directory.
+
+  ```bash
+  conduit -W
+  conduit --write-defaults
   ```
 
 ## Features
@@ -53,8 +62,6 @@ The demo page also has a hardcoded JWT token (payload `{"sub":"1234567890","name
 ## Configuration
 
 Conduit reads configs from `./conduit.yaml` or `/etc/conduit/conduit.yaml`. Both files are merged when present; the local file wins on duplicate keys.
-
-A default [`conduit.yaml`](cmd/conduit/defaults/conduit.yaml) is created automatically on first run next to the binary. See [DOCS.md](DOCS.md) for a full description of every setting.
 
 ## Resolver
 
