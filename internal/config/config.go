@@ -136,6 +136,6 @@ func load(paths []string, read fileReader, decode yamlDecoder) (*Config, error) 
 
 // Load reads conduit.yaml from the standard paths and returns the merged config.
 // Missing files are silently skipped. Returns a default config if none are found.
-func Load() (*Config, error) {
-	return load(ConduitConfigPaths, osFileReader{}, yamlDecoderFunc(yaml.Unmarshal))
+func Load(paths []string) (*Config, error) {
+	return load(paths, osFileReader{}, yamlDecoderFunc(yaml.Unmarshal))
 }

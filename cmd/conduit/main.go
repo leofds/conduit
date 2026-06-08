@@ -88,7 +88,7 @@ func main() {
 	chdirToBin()
 	writeDefaultsIfMissing()
 
-	cfg, err := config.Load()
+	cfg, err := config.Load(config.ConduitConfigPaths)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
