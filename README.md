@@ -8,6 +8,19 @@ This project is intended to be embedded into your application as an internal ser
 
 <img width="998" height="237" alt="image" src="https://github.com/user-attachments/assets/2df5a849-b0ce-450f-97a6-dd3e9b299b2f" />
 
+## Features
+
+- **Browser-based terminal** - full xterm.js terminal served over WebSocket, no client software required
+- **SSH sessions** - connect to remote hosts with password, private key, or interactive keyboard-interactive auth
+- **Local shell sessions** - spawn a local shell or login prompt directly in the browser
+- **Pluggable resolver** - map host identifiers to credentials via a YAML file or your own REST API backend
+- **TOFU host key verification** - Trust on First Use fingerprint checking with an interactive confirmation prompt; persisted to a local YAML store
+- **Per-host settings** - security and timing options can be overridden per host in `hosts.yaml` or returned by the API resolver: whether to verify the host key, whether to auto-accept unknown keys on first use, the inactivity timeout, and the SSH keepalive interval
+- **Debug banner** - optional banner with session details displayed in the terminal before the session starts
+- **Idle timeout & keepalive** - configurable inactivity timeout and SSH keepalive probes
+- **Origin allowlist** - restrict which pages may open a WebSocket terminal (CSWSH protection)
+- **OpenAPI spec** - machine-readable contract for the API resolver at [`api/openapi.yaml`](api/openapi.yaml)
+
 ## Getting Started
 
 1\. Build and Run the project by running:
@@ -45,19 +58,6 @@ The demo page also has a hardcoded JWT token (payload `{"sub":"1234567890","name
   conduit -W
   conduit --write-defaults
   ```
-
-## Features
-
-- **Browser-based terminal** - full xterm.js terminal served over WebSocket, no client software required
-- **SSH sessions** - connect to remote hosts with password, private key, or interactive keyboard-interactive auth
-- **Local shell sessions** - spawn a local shell or login prompt directly in the browser
-- **Pluggable resolver** - map host identifiers to credentials via a YAML file or your own REST API backend
-- **TOFU host key verification** - Trust on First Use fingerprint checking with an interactive confirmation prompt; persisted to a local YAML store
-- **Per-host settings** - security and timing options can be overridden per host in `hosts.yaml` or returned by the API resolver: whether to verify the host key, whether to auto-accept unknown keys on first use, the inactivity timeout, and the SSH keepalive interval
-- **Debug banner** - optional banner with session details displayed in the terminal before the session starts
-- **Idle timeout & keepalive** - configurable inactivity timeout and SSH keepalive probes
-- **Origin allowlist** - restrict which pages may open a WebSocket terminal (CSWSH protection)
-- **OpenAPI spec** - machine-readable contract for the API resolver at [`api/openapi.yaml`](api/openapi.yaml)
 
 ## Configuration
 
