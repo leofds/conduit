@@ -77,10 +77,3 @@
 - **Plaintext credentials in `hosts.yaml`** — SSH passwords are stored in plaintext. Support
   environment variable interpolation (`password: "${MY_SSH_PASS}"`) so secrets can be
   injected at runtime via environment or a secret manager without being written to disk.
-
-- **`private_key_file` path not validated** — When using the API resolver, the returned
-  `private_key_file` path is opened with `os.ReadFile` without checking whether it falls
-  within an expected directory. A compromised or misconfigured API endpoint could cause
-  conduit to read arbitrary files from the filesystem. Validate that the path is absolute
-  and within a configured `ssh.key_dir` before opening it.
-

@@ -153,17 +153,21 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 
 	// Key-based auth: read the private key file and use it if provided.
 	if r.cfg.PrivateKeyFile != "" {
-		keyData, err := os.ReadFile(r.cfg.PrivateKeyFile)
-		if err != nil {
-			notify("SSH key file read failed: %v", err)
-			return
+		if _, err := os.Stat(r.cfg.PrivateKeyFile); err != nil {
+			log.Printf("SSH key file not accessible, skipping key-based auth: %v", err)
+		} else {
+			keyData, err := os.ReadFile(r.cfg.PrivateKeyFile)
+			if err != nil {
+				log.Printf("SSH key file read failed, skipping key-based auth: %v", err)
+			} else {
+				signer, err := gossh.ParsePrivateKey(keyData)
+				if err != nil {
+					log.Printf("SSH key parse failed, skipping key-based auth: %v", err)
+				} else {
+					authMethods = append(authMethods, gossh.PublicKeys(signer))
+				}
+			}
 		}
-		signer, err := gossh.ParsePrivateKey(keyData)
-		if err != nil {
-			notify("SSH key parse failed: %v", err)
-			return
-		}
-		authMethods = append(authMethods, gossh.PublicKeys(signer))
 	}
 
 	if r.cfg.Password != "" {
