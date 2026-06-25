@@ -74,11 +74,6 @@
   Replace with a custom recovery handler that returns a generic `500 Internal Server Error`
   and logs the stack server-side only.
 
-- **Log injection via `host` parameter** — `host` from the URL path parameter is written
-  directly to log output (e.g. `log.Printf("resolver error host=%s …", host, …)`). A crafted
-  host value containing `\n`, ANSI escape codes, or log-format characters can forge log
-  entries. Sanitize or quote the value before logging (e.g. `%q` instead of `%s`).
-
 - **Plaintext credentials in `hosts.yaml`** — SSH passwords are stored in plaintext. Support
   environment variable interpolation (`password: "${MY_SSH_PASS}"`) so secrets can be
   injected at runtime via environment or a secret manager without being written to disk.

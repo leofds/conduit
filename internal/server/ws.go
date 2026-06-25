@@ -39,7 +39,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 
 	cfg, err := s.resolver.Resolve(resolver.Request{Host: host, Token: token})
 	if err != nil {
-		log.Printf("resolver error host=%s: %v", host, err)
+		log.Printf("resolver error host=%q: %v", host, err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
@@ -63,7 +63,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 		address := sess.Address
 		if address == "" {
 			err := fmt.Errorf("address not found")
-			log.Printf("resolver error host=%s: %v", host, err)
+			log.Printf("resolver error host=%q: %v", host, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -74,7 +74,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 		username := sess.Username
 		if username == "" {
 			err := fmt.Errorf("username not found")
-			log.Printf("resolver error host=%s: %v", host, err)
+			log.Printf("resolver error host=%q: %v", host, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

@@ -91,7 +91,7 @@ func makeSSHHandler(doc *openapi3.T, fr *fileresolver.Resolver) http.HandlerFunc
 		}
 
 		auth := r.Header.Get("Authorization")
-		log.Printf("mockapi: ssh host=%s auth=%q", req.Host, auth)
+		log.Printf("mockapi: ssh host=%q auth=%q", req.Host, auth)
 
 		cfg, err := fr.Resolve(resolver.Request{Host: req.Host})
 		if err != nil {
