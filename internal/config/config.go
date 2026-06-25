@@ -43,10 +43,11 @@ type LocalShellConfig struct {
 
 // HTTPServerTimeouts holds timeout settings for the embedded HTTP server.
 type HTTPServerTimeouts struct {
-	Read       time.Duration `yaml:"read"`
-	Write      time.Duration `yaml:"write"`
-	ReadHeader time.Duration `yaml:"read_header"`
-	Idle       time.Duration `yaml:"idle"`
+	Read        time.Duration `yaml:"read"`
+	Write       time.Duration `yaml:"write"`
+	ReadHeader  time.Duration `yaml:"read_header"`
+	Idle        time.Duration `yaml:"idle"`
+	WSHandshake time.Duration `yaml:"ws_handshake"`
 }
 
 // ServerConfig holds HTTP server settings.
@@ -112,6 +113,7 @@ func defaultConfig() *Config {
 				Write:      0,
 				ReadHeader: 10 * time.Second,
 				Idle:       120 * time.Second,
+				WSHandshake: 10 * time.Second,
 			},
 		},
 		Local: LocalShellConfig{

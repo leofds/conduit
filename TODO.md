@@ -44,10 +44,6 @@
   `tls_key` fields in `conduit.yaml`; when both are set, call `ListenAndServeTLS` instead.
   Without this, HTTPS requires a reverse proxy in front of conduit.
 
-- **WebSocket handshake timeout** — `websocket.Upgrader` has no `HandshakeTimeout`. A client
-  that initiates the upgrade and stalls mid-handshake holds the connection open forever.
-  Set a sensible default (e.g. 10 s) and expose it as `server.ws_handshake_timeout`.
-
 - **Rate limiting** — No limit on WebSocket connections per IP. A single client can open
   unlimited concurrent sessions. Add a per-IP connection cap (e.g. using `golang.org/x/time/rate`)
   configurable via `server.max_connections_per_ip`.

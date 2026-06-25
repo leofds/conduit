@@ -176,6 +176,7 @@ server:
     write: 0s
     read_header: 10s
     idle: 120s
+    ws_handshake: 10s
 ```
 
 ### timeouts
@@ -185,6 +186,7 @@ Default values:
 - `write: 0s` (disabled / no write timeout)
 - `read_header: 10s`
 - `idle: 120s`
+- `ws_handshake: 10s`
 
 These values are applied to the embedded HTTP server created by Conduit. They control how long the server waits for request reads, response writes, header reads, and idle connections before closing them.
 

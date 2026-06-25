@@ -31,6 +31,7 @@ server:
     write: 0s
     read_header: 10s
     idle: 120s
+    ws_handshake: 10s
 
 # Local session configuration
 local:

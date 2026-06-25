@@ -21,19 +21,19 @@ import (
 var staticFiles embed.FS
 
 type Server struct {
-	router          *gin.Engine
-	httpServer      *http.Server
-	resolver        resolver.Resolver
-	allowLocal      bool
-	demo            bool
-	debugBanner     bool
-	terminalOptions map[string]any
-	sshCfg          config.SSHConfig
-	localCfg        config.LocalShellConfig
-	allowedOrigins  []string
-	knownHosts      *knownhosts.Store
-	httpHeaders     map[string]string
-	serverConfig    config.ServerConfig
+	router             *gin.Engine
+	httpServer         *http.Server
+	resolver           resolver.Resolver
+	allowLocal         bool
+	demo               bool
+	debugBanner        bool
+	terminalOptions    map[string]any
+	sshCfg             config.SSHConfig
+	localCfg           config.LocalShellConfig
+	allowedOrigins     []string
+	knownHosts         *knownhosts.Store
+	httpHeaders        map[string]string
+	serverConfig       config.ServerConfig
 }
 
 func New(r resolver.Resolver, serverConfig config.ServerConfig, headers map[string]string) *Server {
@@ -50,7 +50,7 @@ func New(r resolver.Resolver, serverConfig config.ServerConfig, headers map[stri
 	}
 	s.router.Use(securityHeaders(headers))
 	s.registerRoutes()
-	
+
 	return s
 }
 

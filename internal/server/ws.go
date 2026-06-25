@@ -177,6 +177,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 	}
 
 	upgrader := websocket.Upgrader{
+		HandshakeTimeout: s.serverConfig.Timeouts.WSHandshake,
 		CheckOrigin: func(r *http.Request) bool {
 			if len(s.allowedOrigins) == 0 {
 				return true

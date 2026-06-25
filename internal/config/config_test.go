@@ -28,10 +28,11 @@ func defaultTestConfig() *Config {
 		},
 		Server: ServerConfig{
 			Timeouts: HTTPServerTimeouts{
-				Read:       10 * time.Second,
-				Write:      0,
-				ReadHeader: 10 * time.Second,
-				Idle:       120 * time.Second,
+				Read:        10 * time.Second,
+				Write:       0,
+				ReadHeader:  10 * time.Second,
+				Idle:        120 * time.Second,
+				WSHandshake: 10 * time.Second,
 			},
 		},
 		Local: LocalShellConfig{
@@ -110,6 +111,9 @@ func compare(a, b Config) (bool, error) {
 	}
 	if a.Server.Timeouts.Idle != b.Server.Timeouts.Idle {
 		return false, fmt.Errorf("Server.Timeouts.Idle = %v, want %v", a.Server.Timeouts.Idle, b.Server.Timeouts.Idle)
+	}
+	if a.Server.Timeouts.WSHandshake != b.Server.Timeouts.WSHandshake {
+		return false, fmt.Errorf("Server.Timeouts.WSHandshake = %v, want %v", a.Server.Timeouts.WSHandshake, b.Server.Timeouts.WSHandshake)
 	}
 	// Local session
 	if a.Local.Command != b.Local.Command {
