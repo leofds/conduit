@@ -41,6 +41,19 @@ type LocalShellConfig struct {
 	Env         map[string]string `yaml:"env"`
 }
 
+// HTTPServerTimeouts holds timeout settings for the embedded HTTP server.
+type HTTPServerTimeouts struct {
+	Read       time.Duration `yaml:"read"`
+	Write      time.Duration `yaml:"write"`
+	ReadHeader time.Duration `yaml:"read_header"`
+	Idle       time.Duration `yaml:"idle"`
+}
+
+// ServerConfig holds HTTP server settings.
+type ServerConfig struct {
+	Timeouts HTTPServerTimeouts `yaml:"timeouts"`
+}
+
 // Config is the top-level Conduit configuration.
 type Config struct {
 	DebugBanner     bool              `yaml:"debug_banner"`
@@ -51,6 +64,7 @@ type Config struct {
 	AllowedOrigins  []string          `yaml:"allowed_origins"`
 	Headers         map[string]string `yaml:"headers"`
 	TerminalOptions map[string]any    `yaml:"terminal_options"`
+	Server          ServerConfig      `yaml:"server"`
 	Local           LocalShellConfig  `yaml:"local"`
 	API             APIConfig         `yaml:"api"`
 	SSH             SSHConfig         `yaml:"ssh"`
@@ -90,6 +104,14 @@ func defaultConfig() *Config {
 			"theme": map[string]any{
 				"background": "#1e1e1e",
 				"foreground": "#d4d4d4",
+			},
+		},
+		Server: ServerConfig{
+			Timeouts: HTTPServerTimeouts{
+				Read:       10 * time.Second,
+				Write:      0,
+				ReadHeader: 10 * time.Second,
+				Idle:       120 * time.Second,
 			},
 		},
 		Local: LocalShellConfig{

@@ -6,9 +6,11 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/leofds/conduit/internal/config"
 	"github.com/leofds/conduit/internal/resolver"
 )
 
@@ -20,7 +22,8 @@ func (stubResolver) Resolve(_ resolver.Request) (resolver.SessionConfig, error) 
 }
 
 func newTestServer() *Server {
-	return New(stubResolver{}, nil)
+	serverConfig := config.ServerConfig{Timeouts: config.HTTPServerTimeouts{Read: 10 * time.Second, Write: 0, ReadHeader: 10 * time.Second, Idle: 120 * time.Second}}
+	return New(stubResolver{}, serverConfig, nil)
 }
 
 func TestHealthEndpoint(t *testing.T) {

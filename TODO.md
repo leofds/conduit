@@ -40,12 +40,6 @@
 
 ## Web server / WebSocket
 
-- **HTTP server timeouts** — `http.Server` in `Start()` has no `ReadTimeout`, `WriteTimeout`,
-  `ReadHeaderTimeout`, or `IdleTimeout`. A client that opens a TCP connection and never
-  finishes the HTTP request holds a goroutine indefinitely. Expose these under `server.timeouts`
-  in `conduit.yaml` with sensible defaults (e.g. `read: 10s`, `write: 0` for streaming,
-  `idle: 120s`).
-
 - **TLS / HTTPS** — `Start()` always calls `ListenAndServe` (plain HTTP). Add `tls_cert` and
   `tls_key` fields in `conduit.yaml`; when both are set, call `ListenAndServeTLS` instead.
   Without this, HTTPS requires a reverse proxy in front of conduit.

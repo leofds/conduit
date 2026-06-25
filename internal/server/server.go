@@ -5,10 +5,10 @@ import (
 	"embed"
 	"encoding/json"
 	"io/fs"
+	"log"
 	"net/http"
 	"strings"
 	"time"
-	"log"
 
 	"github.com/gin-gonic/gin"
 
@@ -33,16 +33,24 @@ type Server struct {
 	allowedOrigins  []string
 	knownHosts      *knownhosts.Store
 	httpHeaders     map[string]string
+	serverConfig    config.ServerConfig
 }
 
-func New(r resolver.Resolver, headers map[string]string) *Server {
+func New(r resolver.Resolver, serverConfig config.ServerConfig, headers map[string]string) *Server {
 	gin.SetMode(gin.ReleaseMode)
 	gin := gin.Default()
 
-	s := &Server{router: gin, resolver: r, allowLocal: true, demo: true, httpHeaders: headers}
+	s := &Server{
+		router:       gin,
+		resolver:     r,
+		allowLocal:   true,
+		demo:         true,
+		httpHeaders:  headers,
+		serverConfig: serverConfig,
+	}
 	s.router.Use(securityHeaders(headers))
 	s.registerRoutes()
-
+	
 	return s
 }
 
@@ -138,8 +146,12 @@ func (s *Server) registerRoutes() {
 
 func (s *Server) Start(addr string) error {
 	s.httpServer = &http.Server{
-		Addr:    addr,
-		Handler: s.router,
+		Addr:              addr,
+		Handler:           s.router,
+		ReadTimeout:       s.serverConfig.Timeouts.Read,
+		WriteTimeout:      s.serverConfig.Timeouts.Write,
+		ReadHeaderTimeout: s.serverConfig.Timeouts.ReadHeader,
+		IdleTimeout:       s.serverConfig.Timeouts.Idle,
 	}
 	return s.httpServer.ListenAndServe()
 }

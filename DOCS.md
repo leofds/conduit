@@ -167,7 +167,30 @@ Any other [xterm.js theme key](https://xtermjs.org/docs/api/terminal/interfaces/
 
 ---
 
-## 1.5 Local session
+## 1.5 Server Config
+
+```yaml
+server:
+  timeouts:
+    read: 10s
+    write: 0s
+    read_header: 10s
+    idle: 120s
+```
+
+### timeouts
+
+Default values:
+- `read: 10s`
+- `write: 0s` (disabled / no write timeout)
+- `read_header: 10s`
+- `idle: 120s`
+
+These values are applied to the embedded HTTP server created by Conduit. They control how long the server waits for request reads, response writes, header reads, and idle connections before closing them.
+
+---
+
+## 1.6 Local session
 
 ```yaml
 local:
@@ -247,7 +270,7 @@ local:
 
 ---
 
-## 1.6 SSH session
+## 1.7 SSH session
 
 ```yaml
 ssh:
@@ -335,7 +358,7 @@ Environment variables forwarded to the SSH server via `Setenv` before the shell 
 
 ---
 
-## 1.7 API resolver
+## 1.8 API resolver
 
 ```yaml
 api:

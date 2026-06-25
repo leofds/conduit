@@ -26,6 +26,14 @@ func defaultTestConfig() *Config {
 				"foreground": "#d4d4d4",
 			},
 		},
+		Server: ServerConfig{
+			Timeouts: HTTPServerTimeouts{
+				Read:       10 * time.Second,
+				Write:      0,
+				ReadHeader: 10 * time.Second,
+				Idle:       120 * time.Second,
+			},
+		},
 		Local: LocalShellConfig{
 			Command:     "/bin/bash",
 			Term:        "xterm-256color",
@@ -89,6 +97,19 @@ func compare(a, b Config) (bool, error) {
 	}
 	if theme["foreground"] != b.TerminalOptions["theme"].(map[string]any)["foreground"] {
 		return false, fmt.Errorf("TerminalOptions[\"theme\"][\"foreground\"] = %v, want #d4d4d4", theme["foreground"])
+	}
+	// Server timeouts
+	if a.Server.Timeouts.Read != b.Server.Timeouts.Read {
+		return false, fmt.Errorf("Server.Timeouts.Read = %v, want %v", a.Server.Timeouts.Read, b.Server.Timeouts.Read)
+	}
+	if a.Server.Timeouts.Write != b.Server.Timeouts.Write {
+		return false, fmt.Errorf("Server.Timeouts.Write = %v, want %v", a.Server.Timeouts.Write, b.Server.Timeouts.Write)
+	}
+	if a.Server.Timeouts.ReadHeader != b.Server.Timeouts.ReadHeader {
+		return false, fmt.Errorf("Server.Timeouts.ReadHeader = %v, want %v", a.Server.Timeouts.ReadHeader, b.Server.Timeouts.ReadHeader)
+	}
+	if a.Server.Timeouts.Idle != b.Server.Timeouts.Idle {
+		return false, fmt.Errorf("Server.Timeouts.Idle = %v, want %v", a.Server.Timeouts.Idle, b.Server.Timeouts.Idle)
 	}
 	// Local session
 	if a.Local.Command != b.Local.Command {
@@ -250,6 +271,40 @@ ssh:
 
 	if equal, err := compare(*cfg, *expected); !equal {
 		t.Fatalf("Config does not match expected defaults: %v", err)
+	}
+}
+
+func TestLoadParsesServerTimeouts(t *testing.T) {
+	tempDir := t.TempDir()
+	path := filepath.Join(tempDir, "conduit.yaml")
+	content := `
+server:
+  timeouts:
+    read: 15s
+    write: 30s
+    read_header: 5s
+    idle: 90s
+`
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	cfg, err := Load([]string{path})
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.Server.Timeouts.Read != 15*time.Second {
+		t.Fatalf("Server.Timeouts.Read = %v, want %v", cfg.Server.Timeouts.Read, 15*time.Second)
+	}
+	if cfg.Server.Timeouts.Write != 30*time.Second {
+		t.Fatalf("Server.Timeouts.Write = %v, want %v", cfg.Server.Timeouts.Write, 30*time.Second)
+	}
+	if cfg.Server.Timeouts.ReadHeader != 5*time.Second {
+		t.Fatalf("Server.Timeouts.ReadHeader = %v, want %v", cfg.Server.Timeouts.ReadHeader, 5*time.Second)
+	}
+	if cfg.Server.Timeouts.Idle != 90*time.Second {
+		t.Fatalf("Server.Timeouts.Idle = %v, want %v", cfg.Server.Timeouts.Idle, 90*time.Second)
 	}
 }
 

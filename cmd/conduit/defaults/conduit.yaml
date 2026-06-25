@@ -24,6 +24,14 @@ terminal_options:
 #   - http://localhost:8080
 #   - https://myapp.example.com
 
+# HTTP server configuration
+server:
+  timeouts:
+    read: 10s
+    write: 0s
+    read_header: 10s
+    idle: 120s
+
 # Local session configuration
 local:
   command: "/bin/bash"

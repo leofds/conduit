@@ -158,7 +158,7 @@ func main() {
 		log.Printf("Resolver: file")
 	}
 
-	srv := server.New(r, cfg.Headers)
+	srv := server.New(r, cfg.Server, cfg.Headers)
 	srv.SetDebugBanner(cfg.DebugBanner)
 	srv.SetAllowLocal(cfg.AllowLocalShell)
 	srv.SetLocalConfig(cfg.Local)
