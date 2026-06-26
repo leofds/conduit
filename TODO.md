@@ -25,9 +25,6 @@
 
 ## Local session
 
-- **Run as a specific user** — Set `cmd.SysProcAttr = &syscall.SysProcAttr{Credential: &syscall.Credential{Uid, Gid}}`
-  to run the shell as a configured user/group without requiring full `sudo`.
-
 - **Graceful shutdown** — `exec.CommandContext` sends `SIGKILL` immediately when the context
   is cancelled (idle timeout, WebSocket close). Send `SIGTERM` first, wait briefly, then
   `SIGKILL` to allow the shell to clean up.
@@ -52,10 +49,6 @@
 - **WebSocket per-message compression** — `EnableCompression` is false by default. Enabling
   `permessage-deflate` can significantly reduce bandwidth on verbose terminal sessions.
   Expose as `server.ws_compression: true`.
-
-- **Token via Authorization header** — `tokenFromCookie` is the only auth token source.
-  Add a fallback to the `Authorization: Bearer <token>` header for integrations where
-  cookies are not practical.
 
 - **`cols`/`rows` bounds clamping** — `parseUint16` accepts values up to 65535 with no upper
   bound check. Clamp to a reasonable maximum (e.g. 500 cols / 200 rows) to avoid allocating

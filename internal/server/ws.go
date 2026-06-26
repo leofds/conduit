@@ -22,11 +22,34 @@ func tokenFromCookie(c *gin.Context) string {
 	return token
 }
 
+// tokenFromRequest extracts the auth token from either the conduit_session cookie
+// or the Authorization: Bearer <token> header, in that order. The header fallback
+// supports non-browser WebSocket clients (e.g. CLI tools, headless integrations)
+// that can set custom headers on the upgrade request but cannot manage cookies.
+func tokenFromRequest(c *gin.Context) string {
+	token := tokenFromCookie(c)
+	if token != "" {
+		return token
+	}
+	return extractBearerToken(c.GetHeader("Authorization"))
+}
+
+// extractBearerToken parses the value of an Authorization header.
+// It returns the token portion after "Bearer ", or empty if the header
+// is missing, malformed, or uses a different scheme.
+func extractBearerToken(authHeader string) string {
+	const prefix = "Bearer "
+	if len(authHeader) > len(prefix) && authHeader[:len(prefix)] == prefix {
+		return authHeader[len(prefix):]
+	}
+	return ""
+}
+
 // wsHandler upgrades the connection to WebSocket and dispatches to the appropriate session runner.
 // Session configuration (method, credentials, host, port, shell) is resolved via s.resolver.
 func (s *Server) wsHandler(c *gin.Context) {
 	host := c.Param("host")
-	token := tokenFromCookie(c)
+	token := tokenFromRequest(c)
 
 	cols := parseUint16(c.Query("cols"), 80)
 	rows := parseUint16(c.Query("rows"), 24)

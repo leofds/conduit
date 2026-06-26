@@ -86,3 +86,15 @@ make lint          # run golangci-lint (requires golangci-lint installed)
 make clean         # remove binary
 make vendor-xterm  # update vendored xterm.js (requires npm)
 ```
+
+## Authentication token
+
+When using the API resolver (`resolver: api`), Conduit forwards an authentication token to your backend so you can validate the user before resolving session credentials. The token is accepted from two sources, checked in order of precedence:
+
+1. **`conduit_session` cookie** — automatically sent by the browser on every HTTP request, including the WebSocket upgrade handshake. This is the natural method for browser-based terminal sessions, since the WebSocket API (`new WebSocket(url)`) does not allow setting custom HTTP headers from client-side JavaScript.
+
+2. **`Authorization: Bearer <token>` header** — fallback for non-browser clients (CLI tools, scripts, headless integrations, or any environment without cookie storage) that can set arbitrary HTTP headers on the WebSocket upgrade request.
+
+The resolved token is sent to the API resolver as the `Authorization: Bearer <token>` HTTP header on the resolver request. The file resolver ignores the token entirely.
+
+If both the cookie and the header are present, the cookie takes precedence — allowing a client to set a fallback `Authorization` header without interfering with cookie-based sessions.

@@ -434,7 +434,7 @@ hosts:
 
 # 3. API resolver protocol
 
-On each connection attempt Conduit POSTs a JSON request to one of two endpoints derived from the configured `api.url`. The `Authorization: Bearer <token>` header is included when the browser sends a `conduit_session` cookie.
+On each connection attempt Conduit POSTs a JSON request to one of two endpoints derived from the configured `api.url`. The `Authorization: Bearer <token>` header is included when the browser sends a `conduit_session` cookie or an `Authorization: Bearer` header on the WebSocket upgrade request.
 
 ### SSH endpoint — `POST <url>/ssh`
 
