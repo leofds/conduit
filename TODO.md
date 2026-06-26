@@ -25,10 +25,6 @@
 
 ## Local session
 
-- **Graceful shutdown** — `exec.CommandContext` sends `SIGKILL` immediately when the context
-  is cancelled (idle timeout, WebSocket close). Send `SIGTERM` first, wait briefly, then
-  `SIGKILL` to allow the shell to clean up.
-
 - **Concurrent session limit** — No guard against many simultaneous local sessions.
   Add an optional `max_sessions` cap in `conduit.yaml` under `local`.
 

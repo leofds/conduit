@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/creack/pty"
@@ -52,7 +53,7 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 
 	var cmd *exec.Cmd
 	parts := strings.Fields(r.cfg.Command)
-	cmd = exec.CommandContext(ctx, parts[0], parts[1:]...)
+	cmd = exec.Command(parts[0], parts[1:]...)
 	cmd.Env = os.Environ()
 	for k, v := range r.cfg.Env {
 		cmd.Env = append(cmd.Env, k+"="+v)
@@ -69,6 +70,37 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 	pty.Setsize(ptmx, &pty.Winsize{Rows: r.rows, Cols: r.cols}) //nolint:errcheck
 	defer func() { _ = ptmx.Close() }()
 
+	// waitCh is closed when the process exits, which lets the graceful
+	// shutdown goroutine know it can stop waiting for the process.
+	waitCh := make(chan struct{})
+
+	// Graceful shutdown goroutine: when ctx is cancelled, send SIGTERM first,
+	// wait briefly, then escalate to SIGKILL. This gives the shell and its
+	// children a chance to clean up (e.g. .bash_logout, temp files, history).
+	// If the process has already exited (normal exit via "exit"), waitCh will
+	// be closed and the select below will return immediately.
+	go func() {
+		<-ctx.Done()
+		if cmd.Process == nil {
+			return
+		}
+		log.Printf("sending SIGTERM to local session process %d", cmd.Process.Pid)
+		if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+			// Process may have already exited — that's fine.
+			return
+		}
+		// Wait briefly for the process to exit after SIGTERM.
+		timer := time.NewTimer(3 * time.Second)
+		defer timer.Stop()
+		select {
+		case <-timer.C:
+			log.Printf("grace period expired, sending SIGKILL to %d", cmd.Process.Pid)
+			_ = cmd.Process.Kill()
+		case <-waitCh:
+			// Process exited gracefully during the grace period.
+		}
+	}()
+
 	// PTY output -> WebSocket
 	writer := &session.Writer{Conn: wsConn}
 	go func() {
@@ -84,8 +116,10 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 		}
 	}()
 
-	// Process-exit watcher
+	// Process-exit watcher: close waitCh so the graceful shutdown goroutine
+	// knows the process has already exited (avoids unnecessary SIGKILL).
 	go func() {
+		defer close(waitCh)
 		if err := cmd.Wait(); err != nil {
 			notify("session ended: %v", err)
 		} else {
