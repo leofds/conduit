@@ -50,10 +50,6 @@
   `permessage-deflate` can significantly reduce bandwidth on verbose terminal sessions.
   Expose as `server.ws_compression: true`.
 
-- **`cols`/`rows` bounds clamping** — `parseUint16` accepts values up to 65535 with no upper
-  bound check. Clamp to a reasonable maximum (e.g. 500 cols / 200 rows) to avoid allocating
-  oversized PTY buffers.
-
 - **Graceful shutdown timeout** — `Shutdown()` uses a hardcoded 10-second context timeout.
   Expose as `server.shutdown_timeout` in `conduit.yaml`.
 

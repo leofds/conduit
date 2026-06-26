@@ -9,6 +9,8 @@ const (
 	ResolverFile      ResolverType = "file"
 	ResolverAPI       ResolverType = "api"
 	SSHMaxAuthRetries int          = 3
+	MaxTerminalCols   uint16       = 2000
+	MaxTerminalRows   uint16       = 1000
 )
 
 // ConduitConfigPaths is the ordered list of paths searched for conduit.yaml.

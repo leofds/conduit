@@ -51,8 +51,8 @@ func (s *Server) wsHandler(c *gin.Context) {
 	host := c.Param("host")
 	token := tokenFromRequest(c)
 
-	cols := parseUint16(c.Query("cols"), 80)
-	rows := parseUint16(c.Query("rows"), 24)
+	cols := clampCols(parseUint16(c.Query("cols"), 80))
+	rows := clampRows(parseUint16(c.Query("rows"), 24))
 
 	if host == config.Local && !s.allowLocal {
 		log.Printf("local shell session blocked (allow_local_shell=false)")
@@ -239,4 +239,18 @@ func parseUint16(s string, def uint16) uint16 {
 		return def
 	}
 	return uint16(n)
+}
+
+func clampCols(cols uint16) uint16 {
+	if cols > config.MaxTerminalCols {
+		return config.MaxTerminalCols
+	}
+	return cols
+}
+
+func clampRows(rows uint16) uint16 {
+	if rows > config.MaxTerminalRows {
+		return config.MaxTerminalRows
+	}
+	return rows
 }
