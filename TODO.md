@@ -20,9 +20,6 @@
 - **Multiple private key files** — `SSHConfig.PrivateKeyFile` is a single path. Accept a list
   and try each signer in order before falling back to other auth methods.
 
-- **Configurable max auth retries** — `RetryableAuthMethod` retry count is hardcoded to `3`.
-  Expose it as `ssh.max_auth_retries` in `conduit.yaml`.
-
 - **Concurrent session limit** — No guard against many simultaneous connections to the same
   host. Add an optional `max_sessions` cap (global or per-host).
 

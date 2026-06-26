@@ -14,6 +14,7 @@ import (
 	gossh "golang.org/x/crypto/ssh"
 
 	"github.com/leofds/conduit/internal/session"
+	"github.com/leofds/conduit/internal/config"
 )
 
 // Config holds session-level parameters for SSH connections.
@@ -185,8 +186,8 @@ func (r *Runner) Run(parentCtx context.Context, wsConn *websocket.Conn) {
 	if len(authMethods) == 0 {
 		// No credentials configured: fall back to interactive prompts.
 		authMethods = []gossh.AuthMethod{
-			gossh.RetryableAuthMethod(kbdInt, 3),
-			gossh.RetryableAuthMethod(gossh.PasswordCallback(passwordPrompt), 3),
+			gossh.RetryableAuthMethod(kbdInt, config.SSHMaxAuthRetries),
+			gossh.RetryableAuthMethod(gossh.PasswordCallback(passwordPrompt), config.SSHMaxAuthRetries),
 		}
 	}
 

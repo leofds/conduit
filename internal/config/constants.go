@@ -6,8 +6,9 @@ const Local = "local"
 type ResolverType string
 
 const (
-	ResolverFile ResolverType = "file"
-	ResolverAPI  ResolverType = "api"
+	ResolverFile      ResolverType = "file"
+	ResolverAPI       ResolverType = "api"
+	SSHMaxAuthRetries int          = 3
 )
 
 // ConduitConfigPaths is the ordered list of paths searched for conduit.yaml.
