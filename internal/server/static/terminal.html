@@ -20,6 +20,7 @@
 
     const term = new Terminal(/*CONDUIT_TERMINAL_OPTS*/);
 
+    document.title = `Conduit - ${host === 'local' ? 'Local Session' : host}`;
     term.open(document.getElementById('terminal'));
 
     function fitTerminal() {

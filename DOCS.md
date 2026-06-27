@@ -304,7 +304,7 @@ Terminal type requested in the SSH PTY.
 
 ### `idle_timeout`
 
-Default: `"10m"`
+Default: `"2m"`
 
 Close the SSH session after this period of inactivity (no keyboard input). Set to `0` to disable.
 

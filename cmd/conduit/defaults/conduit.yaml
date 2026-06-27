@@ -37,7 +37,7 @@ server:
 local:
   command: "/bin/bash"
   term: xterm-256color
-  idle_timeout: 10m
+  idle_timeout: 2m
   working_dir: ""
   env:
     LANG: en_US.UTF-8
@@ -46,7 +46,7 @@ local:
 ssh:
   port: "22"
   term: xterm-256color
-  idle_timeout: 10m
+  idle_timeout: 2m
   keepalive_interval: 30s
   dial_timeout: 10s
   verify_host_key: true

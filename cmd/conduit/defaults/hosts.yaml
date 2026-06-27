@@ -13,7 +13,7 @@ hosts:
     verify_host_key: true     # override the global verify_host_key for this host only
     auto_accept_host_key: false   # override the global auto_accept_host_key for this host only
     term: xterm-256color      # override the global term for this host only
-    idle_timeout: 10m         # override the global idle_timeout for this host only
+    idle_timeout: 2m         # override the global idle_timeout for this host only
     keepalive_interval: 30s   # override the global keepalive_interval for this host only
     env:                      # environment variables to set for this host; only applies to API resolver
       LANG: en_US.UTF-8

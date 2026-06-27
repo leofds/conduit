@@ -220,7 +220,10 @@ func (s *Server) wsHandler(c *gin.Context) {
 		log.Printf("websocket upgrade error: %v", err)
 		return
 	}
-	defer func() { _ = wsConn.Close() }()
+	defer func() {
+		log.Printf("websocket connection closed for host=%q", host)
+		_ = wsConn.Close()
+	}()
 
 	if s.debugBanner {
 		log.Printf("Debug banner enabled")
