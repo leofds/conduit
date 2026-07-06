@@ -15,38 +15,41 @@ import (
 	"github.com/leofds/conduit/internal/config"
 	"github.com/leofds/conduit/internal/knownhosts"
 	"github.com/leofds/conduit/internal/resolver"
+	"github.com/leofds/conduit/internal/session"
 )
 
 //go:embed static
 var staticFiles embed.FS
 
 type Server struct {
-	router             *gin.Engine
-	httpServer         *http.Server
-	resolver           resolver.Resolver
-	allowLocal         bool
-	demo               bool
-	debugBanner        bool
-	terminalOptions    map[string]any
-	sshCfg             config.SSHConfig
-	localCfg           config.LocalShellConfig
-	allowedOrigins     []string
-	knownHosts         *knownhosts.Store
-	httpHeaders        map[string]string
-	serverConfig       config.ServerConfig
+	router          *gin.Engine
+	httpServer      *http.Server
+	resolver        resolver.Resolver
+	allowLocal      bool
+	demo            bool
+	debugBanner     bool
+	terminalOptions map[string]any
+	sshCfg          config.SSHConfig
+	localCfg        config.LocalShellConfig
+	allowedOrigins  []string
+	knownHosts      *knownhosts.Store
+	httpHeaders     map[string]string
+	serverConfig    config.ServerConfig
+	sessionManager  *session.Manager
 }
 
-func New(r resolver.Resolver, serverConfig config.ServerConfig, headers map[string]string) *Server {
+func New(r resolver.Resolver, serverConfig config.ServerConfig, headers map[string]string, sessionManager *session.Manager) *Server {
 	gin.SetMode(gin.ReleaseMode)
 	gin := gin.Default()
 
 	s := &Server{
-		router:       gin,
-		resolver:     r,
-		allowLocal:   true,
-		demo:         true,
-		httpHeaders:  headers,
-		serverConfig: serverConfig,
+		router:          gin,
+		resolver:        r,
+		allowLocal:      true,
+		demo:            true,
+		httpHeaders:     headers,
+		serverConfig:    serverConfig,
+		sessionManager:  sessionManager,
 	}
 	s.router.Use(securityHeaders(headers))
 	s.registerRoutes()

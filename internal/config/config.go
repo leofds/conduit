@@ -69,6 +69,7 @@ type Config struct {
 	Local           LocalShellConfig  `yaml:"local"`
 	API             APIConfig         `yaml:"api"`
 	SSH             SSHConfig         `yaml:"ssh"`
+	ControlSocket   string            `yaml:"control_socket"`
 }
 
 type fileReader interface {
@@ -109,10 +110,10 @@ func defaultConfig() *Config {
 		},
 		Server: ServerConfig{
 			Timeouts: HTTPServerTimeouts{
-				Read:       10 * time.Second,
-				Write:      0,
-				ReadHeader: 10 * time.Second,
-				Idle:       120 * time.Second,
+				Read:        10 * time.Second,
+				Write:       0,
+				ReadHeader:  10 * time.Second,
+				Idle:        120 * time.Second,
 				WSHandshake: 10 * time.Second,
 			},
 		},
@@ -135,6 +136,7 @@ func defaultConfig() *Config {
 			ConnectTimeout:  5 * time.Second,
 			ResponseTimeout: 10 * time.Second,
 		},
+		ControlSocket: "/tmp/conduit.sock",
 	}
 }
 

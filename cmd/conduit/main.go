@@ -19,6 +19,7 @@ import (
 	"github.com/leofds/conduit/internal/resolver/apiresolver"
 	"github.com/leofds/conduit/internal/resolver/fileresolver"
 	"github.com/leofds/conduit/internal/server"
+	"github.com/leofds/conduit/internal/session"
 	"github.com/leofds/conduit/internal/version"
 )
 
@@ -158,7 +159,9 @@ func main() {
 		log.Printf("Resolver: file")
 	}
 
-	srv := server.New(r, cfg.Server, cfg.Headers)
+	sessMan := session.NewManager()
+
+	srv := server.New(r, cfg.Server, cfg.Headers, sessMan)
 	srv.SetDebugBanner(cfg.DebugBanner)
 	srv.SetAllowLocal(cfg.AllowLocalShell)
 	srv.SetLocalConfig(cfg.Local)
@@ -175,11 +178,20 @@ func main() {
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	go func() {
-		log.Printf("Starting conduit %s on %s", version.Version, addr)
+		log.Printf("Starting conduit on %s", addr)
 		if err := srv.Start(addr); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Server error: %v", err)
 		}
 	}()
+
+	control, err := server.NewControlServer(cfg.ControlSocket, sessMan)
+	if err != nil {
+		log.Fatalf("Failed to create control server: %v", err)
+	}
+	err = control.StartUnixSocket()
+	if err != nil {
+		log.Fatalf("Failed to start control server: %v", err)
+	}
 
 	// Handle SIGHUP for hosts file reload (only for file resolver)
 	sighup := make(chan os.Signal, 1)
@@ -203,8 +215,13 @@ func main() {
 	<-quit
 
 	log.Println("Shutting down...")
-	if err := srv.Shutdown(); err != nil {
-		log.Fatalf("Shutdown error: %v", err)
+	err_srv := srv.Shutdown()
+	err_control_srv := control.StopUnixSocket()
+	if err_srv != nil {
+		log.Fatalf("Shutdown error: %v", err_srv)
+	}
+	if err_control_srv != nil {
+		log.Fatalf("Control server shutdown error: %v", err_control_srv)
 	}
 	log.Println("Stopped")
 }

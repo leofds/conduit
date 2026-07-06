@@ -1,16 +1,22 @@
 XTERM_VERSION  := 5.3.0
 XTERM_DIR      := internal/server/static/xterm
 BINARY         := dist/conduit
+BINARY_CTL	   := dist/conduitctl
 BINARY_MOCKAPI := dist/mockapi
 CMD            := ./cmd/conduit
+CMD_CTL		   := ./cmd/conduitctl
 CMD_MOCKAPI    := ./cmd/mockapi
 
 VERSION       := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS       := -ldflags "-X github.com/leofds/conduit/internal/version.Version=$(VERSION)"
 
-.PHONY: build run run-mockapi test lint clean release vendor-xterm
+.PHONY: build-ctl build run run-mockapi test lint clean release vendor-xterm
 
-build:
+build-ctl:
+	mkdir -p dist
+	go build $(LDFLAGS) -o $(BINARY_CTL) ${CMD_CTL}
+
+build: build-ctl
 	mkdir -p dist
 	go build $(LDFLAGS) -o $(BINARY) $(CMD)
 
@@ -27,6 +33,7 @@ release:
 		echo "Building $$GOOS/$$GOARCH..."; \
 		mkdir -p $$STAGE; \
 		GOOS=$$GOOS GOARCH=$$GOARCH go build $(LDFLAGS) -o $$STAGE/conduit $(CMD); \
+		GOOS=$$GOOS GOARCH=$$GOARCH go build $(LDFLAGS) -o $$STAGE/conduitctl $(CMD_CTL); \
 		cp README.md DOCS.md cmd/conduit/defaults/conduit.yaml cmd/conduit/defaults/hosts.yaml $$STAGE/; \
 		tar -czf $$STAGE.tar.gz -C dist $$(basename $$STAGE) && rm -rf $$STAGE; \
 	done

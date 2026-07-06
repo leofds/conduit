@@ -20,6 +20,7 @@ This project is intended to be embedded into your application as an internal ser
 - **Idle timeout & keepalive** - configurable inactivity timeout and SSH keepalive probes
 - **Origin allowlist** - restrict which pages may open a WebSocket terminal (CSWSH protection)
 - **OpenAPI spec** - machine-readable contract for the API resolver at [`api/openapi.yaml`](api/openapi.yaml)
+- **Session management** - Unix socket control interface for managing active sessions
 
 ## Getting Started
 
@@ -98,3 +99,57 @@ When using the API resolver (`resolver: api`), Conduit forwards an authenticatio
 The resolved token is sent to the API resolver as the `Authorization: Bearer <token>` HTTP header on the resolver request. The file resolver ignores the token entirely.
 
 If both the cookie and the header are present, the cookie takes precedence — allowing a client to set a fallback `Authorization` header without interfering with cookie-based sessions.
+
+
+## conduitctl
+
+`conduitctl` is a companion binary for managing active sessions at runtime. It connects to the Conduit control socket (Unix socket) and sends commands.
+
+### Usage
+
+```bash
+conduitctl [--socket <path>] <command>
+```
+
+### Commands
+
+| Command | Description |
+|---|---|
+| `list` | Returns a JSON array of active sessions |
+| `close <id>` | Terminates the session with the given ID |
+| `close-all` | Terminates all active sessions |
+
+### Examples
+
+```bash
+# List active sessions
+conduitctl list
+
+# Close a specific session
+conduitctl close local-1
+
+# Close all sessions
+conduitctl close-all
+
+# Use a custom socket path
+conduitctl --socket /tmp/conduit.sock list
+```
+
+### Build
+
+```bash
+make build-ctl
+```
+
+The `conduitctl` binary reads the control socket path from `conduit.yaml` (field `control_socket`), so in most cases no `--socket` flag is needed.
+
+### Control socket
+
+The control socket is a Unix socket created by the Conduit server at startup. Its path is configured in `conduit.yaml`:
+
+```yaml
+control_socket: /tmp/conduit.sock
+```
+
+The socket is restricted to the owner only (permissions `0600`).
+

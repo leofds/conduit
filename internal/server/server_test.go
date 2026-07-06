@@ -23,7 +23,7 @@ func (stubResolver) Resolve(_ resolver.Request) (resolver.SessionConfig, error) 
 
 func newTestServer() *Server {
 	serverConfig := config.ServerConfig{Timeouts: config.HTTPServerTimeouts{Read: 10 * time.Second, Write: 0, ReadHeader: 10 * time.Second, Idle: 120 * time.Second}}
-	return New(stubResolver{}, serverConfig, nil)
+	return New(stubResolver{}, serverConfig, nil, nil)
 }
 
 func TestHealthEndpoint(t *testing.T) {

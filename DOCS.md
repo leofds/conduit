@@ -14,6 +14,7 @@ demo: true
 port: 8080
 allow_local_shell: true
 resolver: file
+control_socket: /tmp/conduit.sock
 ```
 
 ### debug_banner
@@ -68,6 +69,16 @@ The resolver backend that maps host identifiers to session configurations.
 
 - **`"file"`** — reads from `hosts.yaml`.
 - **`"api"`** — calls a REST API backend.
+
+### control_socket
+
+```yaml
+control_socket: /tmp/conduit.sock
+```
+
+Default: `"/tmp/conduit.sock"`
+
+Path to a Unix socket that exposes a control interface for managing active sessions. The socket is restricted to the owner only (permissions `0600`).
 
 ---
 

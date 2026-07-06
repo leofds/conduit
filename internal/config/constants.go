@@ -1,11 +1,9 @@
 package config
 
-// Local is the reserved host name that requests a localhost shell session.
-const Local = "local"
-
 type ResolverType string
 
 const (
+	Local             string       = "local"
 	ResolverFile      ResolverType = "file"
 	ResolverAPI       ResolverType = "api"
 	SSHMaxAuthRetries int          = 3

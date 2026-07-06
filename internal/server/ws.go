@@ -230,7 +230,20 @@ func (s *Server) wsHandler(c *gin.Context) {
 		s.writeDebugBanner(wsConn, host, bannerCfg, cols)
 	}
 
-	runner.Run(c.Request.Context(), wsConn)
+	if s.sessionManager != nil {
+		method := "ssh"
+		if _, ok := cfg.(resolver.LocalConfig); ok {
+			method = "local"
+		}
+		sessCtx, sessionID, release := s.sessionManager.Register(c.Request.Context(), host, method)
+		defer release()
+
+		runner.Run(sessCtx, wsConn)
+
+		log.Printf("session finished id=%s host=%q", sessionID, host)
+	} else {
+		runner.Run(c.Request.Context(), wsConn)
+	}
 }
 
 func parseUint16(s string, def uint16) uint16 {

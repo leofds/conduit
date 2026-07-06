@@ -4,6 +4,7 @@ demo: true
 port: 8080
 allow_local_shell: true
 resolver: file
+control_socket: /tmp/conduit.sock
 
 # Custom HTTP response headers (security, CORS, etc.)
 # headers:
