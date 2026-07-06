@@ -135,14 +135,6 @@ conduitctl close-all
 conduitctl --socket /tmp/conduit.sock list
 ```
 
-### Build
-
-```bash
-make build-ctl
-```
-
-The `conduitctl` binary reads the control socket path from `conduit.yaml` (field `control_socket`), so in most cases no `--socket` flag is needed.
-
 ### Control socket
 
 The control socket is a Unix socket created by the Conduit server at startup. Its path is configured in `conduit.yaml`:

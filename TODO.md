@@ -59,3 +59,16 @@
 - **Plaintext credentials in `hosts.yaml`** — SSH passwords are stored in plaintext. Support
   environment variable interpolation (`password: "${MY_SSH_PASS}"`) so secrets can be
   injected at runtime via environment or a secret manager without being written to disk.
+
+## Network
+
+- **Allow list** — Add a section in `conduit.yaml` that controls
+  which hosts and IP conduit is allowed to connect to. Format:
+
+  ```yaml
+  allow_list:
+    - method: ssh
+      address:
+        - 10.0.0.8
+        - internal.example.com
+  ```
