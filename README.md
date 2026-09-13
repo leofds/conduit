@@ -2,7 +2,7 @@
 
 Conduit is a lightweight web terminal server written in Go. It gives you browser-based access to a local shell session or a remote host over SSH, served through a self-contained web page powered by [xterm.js](https://xtermjs.org/).
 
-This project is intended to be embedded into your application as an internal service, with your own authentication and host resolution logic plugged in via the resolver interface. It is designed to run behind a reverse proxy (e.g. nginx) that handles TLS termination.
+This project is intended to be embedded into your application as an internal service, with your own authentication and host resolution logic plugged in via the resolver interface.
 
 <img width="998" height="435" alt="image" src="https://github.com/user-attachments/assets/0b6656ee-7750-49c6-ae8b-f3279657aef9" />
 
@@ -13,6 +13,7 @@ This project is intended to be embedded into your application as an internal ser
 - **Browser-based terminal** - full xterm.js terminal served over WebSocket, no client software required
 - **SSH sessions** - connect to remote hosts with password, private key, or interactive keyboard-interactive auth
 - **Local shell sessions** - spawn a local shell or login prompt directly in the browser
+- **Auto-login** - depending on configuration, SSH and local sessions authenticate automatically (credentials from `hosts.yaml` / the resolver) instead of prompting the user
 - **Pluggable resolver** - map host identifiers to credentials via a YAML file or your own REST API backend
 - **TOFU host key verification** - Trust on First Use fingerprint checking with an interactive confirmation prompt; persisted to a local YAML store
 - **Per-host settings** - security and timing options can be overridden per host in `hosts.yaml` or returned by the API resolver: whether to verify the host key, whether to auto-accept unknown keys on first use, the inactivity timeout, and the SSH keepalive interval
