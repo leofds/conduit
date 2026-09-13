@@ -83,115 +83,21 @@ func (s *Server) wsHandler(c *gin.Context) {
 	var bannerCfg any
 	switch sess := cfg.(type) {
 	case resolver.SSHConfig:
-		address := sess.Address
-		if address == "" {
-			err := fmt.Errorf("address not found")
+		runner, bannerCfg, err = s.buildSSHRunner(host, sess, cols, rows)
+		if err != nil {
 			log.Printf("resolver error host=%q: %v", host, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		port := s.sshCfg.Port
-		if sess.Port != "" {
-			port = sess.Port
-		}
-		username := sess.Username
-		if username == "" {
-			err := fmt.Errorf("username not found")
-			log.Printf("resolver error host=%q: %v", host, err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		password := sess.Password
-		privateKeyFile := sess.PrivateKeyFile
-		term := s.sshCfg.Term
-		if sess.Term != "" {
-			term = sess.Term
-		}
-		verifyHostKey := s.sshCfg.VerifyHostKey
-		if sess.VerifyHostKey != nil {
-			verifyHostKey = *sess.VerifyHostKey
-		}
-		autoAcceptHostKey := s.sshCfg.AutoAcceptHostKey
-		if sess.AutoAcceptHostKey != nil {
-			autoAcceptHostKey = *sess.AutoAcceptHostKey
-		}
-		idleTimeout := s.sshCfg.IdleTimeout
-		if sess.IdleTimeout != nil {
-			idleTimeout = *sess.IdleTimeout
-		}
-		keepaliveInterval := s.sshCfg.KeepaliveInterval
-		if sess.KeepaliveInterval != nil {
-			keepaliveInterval = *sess.KeepaliveInterval
-		}
-		sshEnv := make(map[string]string, len(s.sshCfg.Env)+len(sess.Env))
-		for k, v := range s.sshCfg.Env {
-			sshEnv[k] = v
-		}
-		for k, v := range sess.Env {
-			sshEnv[k] = v
-		}
-		sess.Env = sshEnv
-		knownFP := ""
-		var saveHostKey func(string) error
-		if verifyHostKey && s.knownHosts != nil {
-			knownFP = s.knownHosts.Get(host)
-			saveHostKey = func(fp string) error { return s.knownHosts.Set(host, fp) }
-		}
-		sshCfg := sessionssh.Config{
-			Address:           address,
-			Port:              port,
-			Username:          username,
-			Password:          password,
-			PrivateKeyFile:    privateKeyFile,
-			Term:              term,
-			IdleTimeout:       idleTimeout,
-			KeepaliveInterval: keepaliveInterval,
-			DialTimeout:       s.sshCfg.DialTimeout,
-			VerifyHostKey:     verifyHostKey,
-			AutoAcceptHostKey: autoAcceptHostKey,
-			KnownFingerprint:  knownFP,
-			SaveHostKey:       saveHostKey,
-			Env:               sshEnv,
-			DebugBanner:       s.debugBanner,
-		}
-		runner = sessionssh.New(sshCfg, cols, rows)
-		bannerCfg = sshCfg
 		log.Printf("session open  method=ssh user=%s host=%s", sess.Username, sess.Address)
 		defer log.Printf("session close method=ssh user=%s host=%s", sess.Username, sess.Address)
 	case resolver.LocalConfig:
-		command := s.localCfg.Command
-		if sess.Command != "" {
-			command = sess.Command
+		runner, bannerCfg, err = s.buildLocalRunner(sess, cols, rows)
+		if err != nil {
+			log.Printf("resolver error host=%q: %v", host, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
-		term := s.localCfg.Term
-		if sess.Term != "" {
-			term = sess.Term
-		}
-		localWorkingDir := s.localCfg.WorkingDir
-		if sess.WorkingDir != "" {
-			localWorkingDir = sess.WorkingDir
-		}
-		localIdleTimeout := s.localCfg.IdleTimeout
-		if sess.IdleTimeout != nil {
-			localIdleTimeout = *sess.IdleTimeout
-		}
-		// Join global and session-specific env, with session taking precedence.
-		localEnv := make(map[string]string, len(s.localCfg.Env)+len(sess.Env))
-		for k, v := range s.localCfg.Env {
-			localEnv[k] = v
-		}
-		for k, v := range sess.Env {
-			localEnv[k] = v
-		}
-		localCfg := sessionlocal.Config{
-			Command:     command,
-			Term:        term,
-			WorkingDir:  localWorkingDir,
-			IdleTimeout: localIdleTimeout,
-			Env:         localEnv,
-		}
-		runner = sessionlocal.New(localCfg, cols, rows)
-		bannerCfg = localCfg
 		log.Printf("session open  method=local command=%s", sess.Command)
 		defer log.Printf("session close method=local command=%s", sess.Command)
 	default:
@@ -244,6 +150,115 @@ func (s *Server) wsHandler(c *gin.Context) {
 	} else {
 		runner.Run(c.Request.Context(), wsConn)
 	}
+}
+
+// buildSSHRunner builds the SSH session runner and its banner config from the resolved
+// SSH configuration, applying the global s.sshCfg defaults for any unset per-host fields.
+// It returns an error when a required field (address, username) is missing.
+func (s *Server) buildSSHRunner(host string, sess resolver.SSHConfig, cols, rows uint16) (session.Runner, sessionssh.Config, error) {
+	address := sess.Address
+	if address == "" {
+		return nil, sessionssh.Config{}, fmt.Errorf("address not found")
+	}
+	port := s.sshCfg.Port
+	if sess.Port != "" {
+		port = sess.Port
+	}
+	username := sess.Username
+	if username == "" {
+		return nil, sessionssh.Config{}, fmt.Errorf("username not found")
+	}
+	password := sess.Password
+	privateKeyFile := sess.PrivateKeyFile
+	term := s.sshCfg.Term
+	if sess.Term != "" {
+		term = sess.Term
+	}
+	verifyHostKey := s.sshCfg.VerifyHostKey
+	if sess.VerifyHostKey != nil {
+		verifyHostKey = *sess.VerifyHostKey
+	}
+	autoAcceptHostKey := s.sshCfg.AutoAcceptHostKey
+	if sess.AutoAcceptHostKey != nil {
+		autoAcceptHostKey = *sess.AutoAcceptHostKey
+	}
+	idleTimeout := s.sshCfg.IdleTimeout
+	if sess.IdleTimeout != nil {
+		idleTimeout = *sess.IdleTimeout
+	}
+	keepaliveInterval := s.sshCfg.KeepaliveInterval
+	if sess.KeepaliveInterval != nil {
+		keepaliveInterval = *sess.KeepaliveInterval
+	}
+	sshEnv := make(map[string]string, len(s.sshCfg.Env)+len(sess.Env))
+	for k, v := range s.sshCfg.Env {
+		sshEnv[k] = v
+	}
+	for k, v := range sess.Env {
+		sshEnv[k] = v
+	}
+	sess.Env = sshEnv
+	knownFP := ""
+	var saveHostKey func(string) error
+	if verifyHostKey && s.knownHosts != nil {
+		knownFP = s.knownHosts.Get(host)
+		saveHostKey = func(fp string) error { return s.knownHosts.Set(host, fp) }
+	}
+	sshCfg := sessionssh.Config{
+		Address:           address,
+		Port:              port,
+		Username:          username,
+		Password:          password,
+		PrivateKeyFile:    privateKeyFile,
+		Term:              term,
+		IdleTimeout:       idleTimeout,
+		KeepaliveInterval: keepaliveInterval,
+		DialTimeout:       s.sshCfg.DialTimeout,
+		VerifyHostKey:     verifyHostKey,
+		AutoAcceptHostKey: autoAcceptHostKey,
+		KnownFingerprint:  knownFP,
+		SaveHostKey:       saveHostKey,
+		Env:               sshEnv,
+		DebugBanner:       s.debugBanner,
+	}
+	return sessionssh.New(sshCfg, cols, rows), sshCfg, nil
+}
+
+// buildLocalRunner builds the local session runner and its banner config from the resolved
+// local configuration, applying the global s.localCfg defaults for any unset per-session fields.
+func (s *Server) buildLocalRunner(sess resolver.LocalConfig, cols, rows uint16) (session.Runner, sessionlocal.Config, error) {
+	command := s.localCfg.Command
+	if sess.Command != "" {
+		command = sess.Command
+	}
+	term := s.localCfg.Term
+	if sess.Term != "" {
+		term = sess.Term
+	}
+	localWorkingDir := s.localCfg.WorkingDir
+	if sess.WorkingDir != "" {
+		localWorkingDir = sess.WorkingDir
+	}
+	localIdleTimeout := s.localCfg.IdleTimeout
+	if sess.IdleTimeout != nil {
+		localIdleTimeout = *sess.IdleTimeout
+	}
+	// Join global and session-specific env, with session taking precedence.
+	localEnv := make(map[string]string, len(s.localCfg.Env)+len(sess.Env))
+	for k, v := range s.localCfg.Env {
+		localEnv[k] = v
+	}
+	for k, v := range sess.Env {
+		localEnv[k] = v
+	}
+	localCfg := sessionlocal.Config{
+		Command:     command,
+		Term:        term,
+		WorkingDir:  localWorkingDir,
+		IdleTimeout: localIdleTimeout,
+		Env:         localEnv,
+	}
+	return sessionlocal.New(localCfg, cols, rows), localCfg, nil
 }
 
 func parseUint16(s string, def uint16) uint16 {

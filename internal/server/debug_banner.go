@@ -26,6 +26,7 @@ func (s *Server) writeDebugBanner(wsConn *websocket.Conn, host string, cfg any, 
 	write(blue + " ██║     ██║   ██║██║╚██╗██║██║  ██║██║   ██║██║   ██║\r\n" + reset)
 	write(blue + " ╚██████╗╚██████╔╝██║ ╚████║██████╔╝╚██████╔╝██║   ██║\r\n" + reset)
 	write(blue + "  ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═════╝  ╚═════╝ ╚═╝   ╚═╝\r\n" + reset)
+	write("--------------------- Debug Banner ----------------------\r\n")
 	write("\r\n")
 	write(fmt.Sprintf("Project: %s%s%s\r\n", valueColor, "https://github.com/leofds/conduit", reset))
 	write(fmt.Sprintf("Version: %s%s%s\r\n", valueColor, version.Version, reset))
