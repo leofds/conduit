@@ -1,0 +1,35 @@
+# sshd_config for conduit integration tests.
+#
+# Deliberately permissive: password auth enabled, root-style sudo for the
+# "master" user, and a small env allowlist so conduit's Setenv calls are
+# accepted by the server.
+
+Port 22
+AddressFamily any
+ListenAddress 0.0.0.0
+
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+
+# Accept a public key we bake into the image (see authorized_keys setup).
+PubkeyAuthentication yes
+PasswordAuthentication yes
+PermitRootLogin no
+
+# Forward env vars set by the client (conduit calls Setenv before Shell).
+# Without this, sshd rejects them and conduit logs "Env rejected".
+AcceptEnv LANG LC_* TERM CONDUIT_* TEST_*
+
+# Pre-authentication banner shown to every connecting client, before login.
+Banner /etc/ssh/banner.txt
+
+# Do not require a PAM stack; keeps the test image small and deterministic.
+UsePAM no
+
+# Allow interactive keyboard-interactive fallback too.
+KbdInteractiveAuthentication yes
+ChallengeResponseAuthentication yes
+
+PrintMotd no
+Subsystem sftp /usr/lib/ssh/sftp-server

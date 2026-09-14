@@ -17,3 +17,19 @@ hosts:
     keepalive_interval: 30s   # override the global keepalive_interval for this host only
     env:                      # environment variables to set for this host; only applies to API resolver
       LANG: en_US.UTF-8
+  test-guest:
+    address: 127.0.0.1
+    port: 2222
+    username: guest
+    password: guestpass
+  test-master:
+    address: 127.0.0.1
+    port: 2222
+    username: master
+    auto_accept_host_key: true
+  test-key-master:
+    address: 127.0.0.1
+    port: 2222
+    username: master
+    private_key_file: ../test/sshserver/keys/authorized_keys.test
+    auto_accept_host_key: true

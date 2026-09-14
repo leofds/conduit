@@ -43,13 +43,13 @@ func New(r resolver.Resolver, serverConfig config.ServerConfig, headers map[stri
 	gin := gin.Default()
 
 	s := &Server{
-		router:          gin,
-		resolver:        r,
-		allowLocal:      true,
-		demo:            true,
-		httpHeaders:     headers,
-		serverConfig:    serverConfig,
-		sessionManager:  sessionManager,
+		router:         gin,
+		resolver:       r,
+		allowLocal:     true,
+		demo:           true,
+		httpHeaders:    headers,
+		serverConfig:   serverConfig,
+		sessionManager: sessionManager,
 	}
 	s.router.Use(securityHeaders(headers))
 	s.registerRoutes()

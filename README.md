@@ -83,11 +83,60 @@ make run-mockapi
 ## Development
 
 ```bash
-make test          # run tests
-make lint          # run golangci-lint (requires golangci-lint installed)
-make clean         # remove binary
-make vendor-xterm  # update vendored xterm.js (requires npm)
+make test              # run unit tests (no Docker required)
+make lint              # run golangci-lint (requires golangci-lint installed)
+make clean             # remove binary
+make vendor-xterm      # update vendored xterm.js (requires npm)
 ```
+
+### Test SSH server (Docker)
+
+Conduit's SSH path is exercised against a **real OpenSSH server** running in a
+container. The image ships two users so you can test both privileged and
+restricted access:
+
+| User     | Password     | Rights                                           |
+|----------|--------------|--------------------------------------------------|
+| `master` | `masterpass` | Passwordless `sudo` (NOPASSWD) — can run as root |
+| `guest`  | `guestpass`  | Limited account; explicitly denied all `sudo`    |
+
+Both users accept **password** and **key-based** authentication. A test keypair is
+generated on the host (git-ignored), the public key is mounted into the container
+as `authorized_keys`, and the private key stays on the host for tests and manual
+`ssh` clients.
+
+```bash
+make sshserver-keys     # generate the host test keypair (test/sshserver/keys/, git-ignored)
+make sshserver-up       # generate keys if missing, then build + start on 127.0.0.1:2222
+make sshserver-shell    # open an interactive shell in the container (as master, in $HOME)
+make sshserver-down     # stop and remove the container
+
+make test-integration   # start the server, run integration tests, then tear it down
+```
+
+`make test-integration` requires Docker (e.g. Docker Desktop, Colima, or OrbStack).
+When the server is unreachable, the integration tests **skip** automatically, so
+plain `make test` stays green without Docker.
+
+The integration tests live in [`test/integration`](test/integration) behind the
+`integration` build tag, and the server fixture is defined in
+[`test/sshserver`](test/sshserver) — see its
+[README](test/sshserver/README.md) for users, keys, and a ready-to-use
+`hosts.yaml`.
+
+Quick manual check against the running server:
+
+```bash
+# Password auth — as master, sudo works
+ssh -p 2222 master@127.0.0.1          # password: masterpass
+
+# Key auth — using the host-generated key
+ssh -p 2222 -i test/sshserver/keys/authorized_keys.test master@127.0.0.1
+```
+
+> **Apple Silicon (M-series):** the Alpine base image is multi-arch and builds
+> natively (`linux/arm64`) — do **not** pin `platform: linux/amd64` in the compose
+> file, or it will run under emulation.
 
 ## Authentication token
 

@@ -1,0 +1,31 @@
+# Test SSH server for conduit integration tests.
+#
+# Usage:
+#   docker compose -f test/sshserver/docker-compose.test.yml up -d --build
+#   docker compose -f test/sshserver/docker-compose.test.yml down
+#
+# The server is reachable on the host at 127.0.0.1:2222.
+# Users: master/masterpass (sudo) and guest/guestpass (limited).
+#
+# Apple Silicon (M1/M2/M3/M4): the alpine base is multi-arch, so it builds
+# natively (linux/arm64) — do NOT pin platform: linux/amd64 or it will run
+# under emulation. Leave the platform unset to use the host architecture.
+services:
+  sshserver:
+    build:
+      context: .
+    image: conduit-sshtest
+    hostname: sshserver
+    container_name: conduit-sshtest
+    ports:
+      - "2222:22"
+    # Mount pre-generated test keys if present so host and container agree;
+    # otherwise entrypoint.sh generates them inside the container.
+    volumes:
+      - ./keys:/keys:ro
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "22"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+

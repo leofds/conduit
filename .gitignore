@@ -21,3 +21,6 @@ _dev/
 /known_hosts.yaml
 /conduit.yaml
 /hosts.yaml
+
+# Test SSH server key material
+test/sshserver/keys/*

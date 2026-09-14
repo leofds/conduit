@@ -1,0 +1,5 @@
+================================================================
+ CONDUIT TEST SSH SERVER
+ Authorized access only. This is an integration test fixture, not
+ a production system. All activity may be logged.
+================================================================
