@@ -37,9 +37,9 @@ import (
 
 	conduitapi "github.com/leofds/conduit/api"
 	"github.com/leofds/conduit/internal/config"
-	"github.com/leofds/conduit/internal/resolver"
-	"github.com/leofds/conduit/internal/resolver/apiresolver"
-	"github.com/leofds/conduit/internal/resolver/fileresolver"
+	"github.com/leofds/conduit/resolver"
+	"github.com/leofds/conduit/resolver/apiresolver"
+	"github.com/leofds/conduit/resolver/fileresolver"
 )
 
 // These structs mirror apiresolver's request/response bodies.

@@ -13,8 +13,8 @@ import (
 	"github.com/gorilla/websocket"
 	gossh "golang.org/x/crypto/ssh"
 
-	"github.com/leofds/conduit/internal/session"
 	"github.com/leofds/conduit/internal/config"
+	"github.com/leofds/conduit/session"
 )
 
 // Config holds session-level parameters for SSH connections.

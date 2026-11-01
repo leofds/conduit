@@ -11,7 +11,7 @@ import (
 	"github.com/goccy/go-yaml"
 
 	"github.com/leofds/conduit/internal/config"
-	"github.com/leofds/conduit/internal/resolver"
+	"github.com/leofds/conduit/resolver"
 )
 
 type hostEntry struct {
@@ -26,6 +26,7 @@ type hostEntry struct {
 	VerifyHostKey     *bool             `yaml:"verify_host_key"`
 	IdleTimeout       *time.Duration    `yaml:"idle_timeout"`
 	KeepaliveInterval *time.Duration    `yaml:"keepalive_interval"`
+	KnownFingerprint  string            `yaml:"known_fingerprint"`
 }
 
 type hostsFile struct {
@@ -116,5 +117,6 @@ func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error)
 		VerifyHostKey:     entry.VerifyHostKey,
 		IdleTimeout:       entry.IdleTimeout,
 		KeepaliveInterval: entry.KeepaliveInterval,
+		KnownFingerprint:  entry.KnownFingerprint,
 	}, nil
 }

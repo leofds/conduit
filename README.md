@@ -2,7 +2,7 @@
 
 Conduit is a lightweight web terminal server written in Go. It gives you browser-based access to a local shell session or a remote host over SSH, served through a self-contained web page powered by [xterm.js](https://xtermjs.org/).
 
-This project is intended to be embedded into your application as an internal service, with your own authentication and host resolution logic plugged in via the resolver interface.
+It can run as a standalone service (the built `conduit` binary), letting you plug your own authentication and host resolution logic in via the resolver interface. It can also be used as a Go module ([`github.com/leofds/conduit`](https://pkg.go.dev/github.com/leofds/conduit)) and mounted inside your own Go service — see [Embedding Conduit in your Go application](#embedding-conduit-in-your-go-application).
 
 <img width="998" height="435" alt="image" src="https://github.com/user-attachments/assets/0b6656ee-7750-49c6-ae8b-f3279657aef9" />
 
@@ -89,10 +89,16 @@ make clean             # remove binary
 make vendor-xterm      # update vendored xterm.js (requires npm)
 ```
 
-### Test SSH server (Docker)
+### SSH sandbox (Docker)
+
+> **Prerequisite:** [Docker](https://docs.docker.com/get-docker/) must be installed
+> and running (e.g. Docker Desktop, Colima, or OrbStack). The commands below fail
+> if the Docker daemon is not reachable.
 
 Conduit's SSH path is exercised against a **real OpenSSH server** running in a
-container. The image ships two users so you can test both privileged and
+sandbox container, reachable at `127.0.0.1:2222`. You can use it both for the
+integration tests and for manually trying Conduit's SSH features (including the
+[`examples/sandbox`](examples/sandbox/main.go) embedding example). The image ships two users so you can test both privileged and
 restricted access:
 
 | User     | Password     | Rights                                           |
@@ -106,22 +112,22 @@ as `authorized_keys`, and the private key stays on the host for tests and manual
 `ssh` clients.
 
 ```bash
-make sshserver-keys     # generate the host test keypair (test/sshserver/keys/, git-ignored)
-make sshserver-up       # generate keys if missing, then build + start on 127.0.0.1:2222
-make sshserver-shell    # open an interactive shell in the container (as master, in $HOME)
-make sshserver-down     # stop and remove the container
+make sandbox-keys       # generate the host test keypair (test/sandbox/keys/, git-ignored)
+make sandbox-up         # generate keys if missing, then build + start on 127.0.0.1:2222
+make sandbox-shell      # open an interactive shell in the container (as master, in $HOME)
+make sandbox-down       # stop and remove the container
 
-make test-integration   # start the server, run integration tests, then tear it down
+make test-integration   # start the sandbox, run integration tests, then tear it down
+make run-sandbox-example # run the sandbox embedding example (needs sandbox-up first)
 ```
 
-`make test-integration` requires Docker (e.g. Docker Desktop, Colima, or OrbStack).
-When the server is unreachable, the integration tests **skip** automatically, so
+When Docker is unavailable, the integration tests **skip** automatically, so
 plain `make test` stays green without Docker.
 
 The integration tests live in [`test/integration`](test/integration) behind the
-`integration` build tag, and the server fixture is defined in
-[`test/sshserver`](test/sshserver) — see its
-[README](test/sshserver/README.md) for users, keys, and a ready-to-use
+`integration` build tag, and the SSH sandbox is defined in
+[`test/sandbox`](test/sandbox) — see its
+[README](test/sandbox/README.md) for users, keys, and a ready-to-use
 `hosts.yaml`.
 
 Quick manual check against the running server:
@@ -131,7 +137,7 @@ Quick manual check against the running server:
 ssh -p 2222 master@127.0.0.1          # password: masterpass
 
 # Key auth — using the host-generated key
-ssh -p 2222 -i test/sshserver/keys/authorized_keys.test master@127.0.0.1
+ssh -p 2222 -i test/sandbox/keys/authorized_keys.test master@127.0.0.1
 ```
 
 > **Apple Silicon (M-series):** the Alpine base image is multi-arch and builds
@@ -195,3 +201,29 @@ control_socket: /tmp/conduit.sock
 
 The socket is restricted to the owner only (permissions `0600`).
 
+## Embedding Conduit in your Go application
+
+Conduit is also designed to be used as a Go module inside your own service. Instead of
+running the `conduit` binary, you import `github.com/leofds/conduit`, provide a
+`resolver.Resolver` (your own auth + host lookup) and a host-key store, and let
+Conduit serve the terminal UI and WebSocket for you.
+
+Runnable examples live in [`examples/`](examples):
+
+- **[`examples/server`](examples/server/main.go)** — runs Conduit's own HTTP
+  server, started explicitly and shut down gracefully on `SIGINT`/`SIGTERM`
+  (mirrors how `cmd/conduit/main.go` wires things up). Uses a custom in-memory
+  resolver and a file-backed known-hosts store.
+- **[`examples/embed`](examples/embed/main.go)** — mounts Conduit's `Handler()`
+  on your own `http.ServeMux`, with a custom in-memory resolver and the in-memory
+  known-hosts store.
+- **[`examples/sandbox`](examples/sandbox/main.go)** — wires Conduit to the
+  [SSH sandbox](#ssh-sandbox-docker) in `test/sandbox` (password and key auth),
+  with a custom resolver and a file-backed known-hosts store.
+
+```bash
+go run ./examples/server   # http://localhost:9090/demo
+go run ./examples/embed    # http://localhost:9090/demo
+
+make sandbox-up && go run ./examples/sandbox   # needs Docker; http://localhost:9090/demo
+```

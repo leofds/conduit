@@ -17,6 +17,7 @@ type file struct {
 }
 
 // Store is a thread-safe persistent map of logical host name → SHA256 fingerprint.
+// It is a file-backed implementation of Provider.
 type Store struct {
 	path    string
 	mu      sync.RWMutex
@@ -120,4 +121,3 @@ func (s *Store) Remove(host string) error {
 	}
 	return nil
 }
-

@@ -6,20 +6,67 @@ import (
 	"encoding/json"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/leofds/conduit/internal/config"
-	"github.com/leofds/conduit/internal/knownhosts"
-	"github.com/leofds/conduit/internal/resolver"
-	"github.com/leofds/conduit/internal/session"
+	"github.com/leofds/conduit/knownhosts"
+	"github.com/leofds/conduit/resolver"
+	"github.com/leofds/conduit/session"
 )
 
 //go:embed static
 var staticFiles embed.FS
+
+// SSHOptions are the server-level defaults applied to resolved SSH sessions.
+type SSHOptions struct {
+	Port              string
+	Term              string
+	IdleTimeout       time.Duration
+	KeepaliveInterval time.Duration
+	DialTimeout       time.Duration
+	VerifyHostKey     bool
+	AutoAcceptHostKey bool
+	Env               map[string]string
+}
+
+// LocalOptions are the server-level defaults applied to resolved local sessions.
+type LocalOptions struct {
+	Command     string
+	Term        string
+	WorkingDir  string
+	IdleTimeout time.Duration
+	Env         map[string]string
+}
+
+// Timeouts mirrors the embedded HTTP server timeout settings.
+type Timeouts struct {
+	Read        time.Duration
+	Write       time.Duration
+	ReadHeader  time.Duration
+	Idle        time.Duration
+	WSHandshake time.Duration
+}
+
+// Options configures an internal Server. It is populated by the public façade.
+type Options struct {
+	Resolver        resolver.Resolver
+	SessionManager  *session.Manager
+	KnownHosts      knownhosts.Provider
+	RequestMapper   func(*http.Request) resolver.Request
+	AllowLocal      bool
+	Demo            bool
+	DebugBanner     bool
+	AllowedOrigins  []string
+	HTTPHeaders     map[string]string
+	TerminalOptions map[string]any
+	SSH             SSHOptions
+	Local           LocalOptions
+	Timeouts        Timeouts
+}
 
 type Server struct {
 	router          *gin.Engine
@@ -29,73 +76,55 @@ type Server struct {
 	demo            bool
 	debugBanner     bool
 	terminalOptions map[string]any
-	sshCfg          config.SSHConfig
-	localCfg        config.LocalShellConfig
+	requestMapper   func(*http.Request) resolver.Request
+	sshCfg          SSHOptions
+	localCfg        LocalOptions
 	allowedOrigins  []string
-	knownHosts      *knownhosts.Store
+	knownHosts      knownhosts.Provider
 	httpHeaders     map[string]string
-	serverConfig    config.ServerConfig
+	timeouts        Timeouts
 	sessionManager  *session.Manager
 }
 
-func New(r resolver.Resolver, serverConfig config.ServerConfig, headers map[string]string, sessionManager *session.Manager) *Server {
+func New(opts Options) *Server {
 	gin.SetMode(gin.ReleaseMode)
-	gin := gin.Default()
+	router := gin.Default()
 
 	s := &Server{
-		router:         gin,
-		resolver:       r,
-		allowLocal:     true,
-		demo:           true,
-		httpHeaders:    headers,
-		serverConfig:   serverConfig,
-		sessionManager: sessionManager,
+		router:          router,
+		resolver:        opts.Resolver,
+		allowLocal:      opts.AllowLocal,
+		demo:            opts.Demo,
+		debugBanner:     opts.DebugBanner,
+		terminalOptions: opts.TerminalOptions,
+		requestMapper:   opts.RequestMapper,
+		sshCfg:          opts.SSH,
+		localCfg:        opts.Local,
+		allowedOrigins:  opts.AllowedOrigins,
+		knownHosts:      opts.KnownHosts,
+		httpHeaders:     opts.HTTPHeaders,
+		timeouts:        opts.Timeouts,
+		sessionManager:  opts.SessionManager,
 	}
-	s.router.Use(securityHeaders(headers))
+	s.router.Use(securityHeaders(opts.HTTPHeaders))
 	s.registerRoutes()
 
 	return s
 }
 
-// SetTerminalOptions sets the options passed to the xterm.js Terminal constructor.
-func (s *Server) SetTerminalOptions(opts map[string]any) {
-	s.terminalOptions = opts
+// SetRequestMapper overrides how the resolver.Request is computed per connection.
+func (s *Server) SetRequestMapper(fn func(*http.Request) resolver.Request) {
+	s.requestMapper = fn
 }
 
-// SetAllowLocal controls whether local shell sessions are permitted.
-func (s *Server) SetAllowLocal(allow bool) {
-	s.allowLocal = allow
-}
-
-// SetDebugBanner controls whether a banner with session details is shown before the shell.
-func (s *Server) SetDebugBanner(debug bool) {
-	s.debugBanner = debug
-}
-
-// SetDemo controls whether the demo page is enabled.
+// SetDemo toggles the demo page at runtime.
 func (s *Server) SetDemo(enabled bool) {
 	s.demo = enabled
 }
 
-// SetSSHConfig applies SSH session-level parameters (timeouts, keepalive).
-func (s *Server) SetSSHConfig(cfg config.SSHConfig) {
-	s.sshCfg = cfg
-}
-
-// SetLocalConfig sets the global defaults for local shell sessions.
-func (s *Server) SetLocalConfig(cfg config.LocalShellConfig) {
-	s.localCfg = cfg
-}
-
-// SetAllowedOrigins sets the WebSocket Origin allowlist.
-// An empty list permits all origins (default, suitable when behind a trusted reverse proxy).
-func (s *Server) SetAllowedOrigins(origins []string) {
-	s.allowedOrigins = origins
-}
-
-// SetKnownHosts sets the store used for SSH host key TOFU verification.
-func (s *Server) SetKnownHosts(ks *knownhosts.Store) {
-	s.knownHosts = ks
+// Handler returns the HTTP handler so the server can be mounted on a host router.
+func (s *Server) Handler() http.Handler {
+	return s.router
 }
 
 func (s *Server) registerRoutes() {
@@ -147,19 +176,34 @@ func (s *Server) registerRoutes() {
 	s.router.GET("/ws/:host", s.wsHandler)
 }
 
-func (s *Server) Start(addr string) error {
-	s.httpServer = &http.Server{
+// buildHTTPServer constructs the *http.Server from the configured timeouts.
+func (s *Server) buildHTTPServer(addr string) *http.Server {
+	return &http.Server{
 		Addr:              addr,
 		Handler:           s.router,
-		ReadTimeout:       s.serverConfig.Timeouts.Read,
-		WriteTimeout:      s.serverConfig.Timeouts.Write,
-		ReadHeaderTimeout: s.serverConfig.Timeouts.ReadHeader,
-		IdleTimeout:       s.serverConfig.Timeouts.Idle,
+		ReadTimeout:       s.timeouts.Read,
+		WriteTimeout:      s.timeouts.Write,
+		ReadHeaderTimeout: s.timeouts.ReadHeader,
+		IdleTimeout:       s.timeouts.Idle,
 	}
+}
+
+// Start creates a listener on addr, owns it, and serves until shutdown.
+func (s *Server) Start(addr string) error {
+	s.httpServer = s.buildHTTPServer(addr)
 	return s.httpServer.ListenAndServe()
 }
 
+// Serve serves on a caller-provided listener (e.g. for TLS/mTLS the host controls).
+func (s *Server) Serve(ln net.Listener) error {
+	s.httpServer = s.buildHTTPServer("")
+	return s.httpServer.Serve(ln)
+}
+
 func (s *Server) Shutdown() error {
+	if s.httpServer == nil {
+		return nil
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	return s.httpServer.Shutdown(ctx)

@@ -14,7 +14,7 @@ import (
 	"github.com/creack/pty"
 	"github.com/gorilla/websocket"
 
-	"github.com/leofds/conduit/internal/session"
+	"github.com/leofds/conduit/session"
 )
 
 // Config holds session-level parameters for local sessions.

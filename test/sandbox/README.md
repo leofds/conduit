@@ -11,7 +11,7 @@ against a genuine SSH server (PTY, resize, `Setenv`, host-key TOFU, keepalive, a
 | `guest`  | `guestpass`  | Limited account; explicitly denied all `sudo`       |
 
 Both users accept password auth and key-based auth. The keypair is generated on
-the host by `make sshserver-keys` (into `test/sshserver/keys/`, which is
+the host by `make sandbox-keys` (into `test/sandbox/keys/`, which is
 git-ignored). The public key is mounted into the container and installed as
 `authorized_keys` for both users; the private key stays on the host so tests and
 manual `ssh` clients can authenticate with it.
@@ -19,12 +19,12 @@ manual `ssh` clients can authenticate with it.
 ## Generate the test keypair
 
 ```bash
-make sshserver-keys
-# -> test/sshserver/keys/authorized_keys.test       (private, keep on host)
-# -> test/sshserver/keys/authorized_keys.test.pub   (public, mounted into the container)
+make sandbox-keys
+# -> test/sandbox/keys/authorized_keys.test       (private, keep on host)
+# -> test/sandbox/keys/authorized_keys.test.pub   (public, mounted into the container)
 ```
 
-`make sshserver-up` runs this automatically, so the key is always present before
+`make sandbox-up` runs this automatically, so the key is always present before
 the container starts.
 
 ## Run
@@ -32,16 +32,16 @@ the container starts.
 Using make (recommended):
 
 ```bash
-make sshserver-up          # generates keys if missing, builds + starts on 127.0.0.1:2222
-make sshserver-shell       # master shell inside the container
-make sshserver-down
+make sandbox-up          # generates keys if missing, builds + starts on 127.0.0.1:2222
+make sandbox-shell       # master shell inside the container
+make sandbox-down
 ```
 
 Using docker compose directly:
 
 ```bash
-docker compose -f test/sshserver/docker-compose.test.yml up -d --build
-docker compose -f test/sshserver/docker-compose.test.yml down
+docker compose -f test/sandbox/docker-compose.test.yml up -d --build
+docker compose -f test/sandbox/docker-compose.test.yml down
 ```
 
 The server listens on the host at `127.0.0.1:2222`.
@@ -61,7 +61,7 @@ test-key-master:
   address: 127.0.0.1
   port: "2222"
   username: master
-  private_key_file: ../test/sshserver/keys/authorized_keys.test
+  private_key_file: ../test/sandbox/keys/authorized_keys.test
   auto_accept_host_key: true
 ```
 
@@ -77,7 +77,7 @@ ssh -p 2222 guest@127.0.0.1           # password: guestpass
 #   $ sudo id    -> "guest is not allowed to execute ... as root"
 
 # Key auth — using the host-generated key (no password prompt)
-ssh -p 2222 -i test/sshserver/keys/authorized_keys.test master@127.0.0.1
+ssh -p 2222 -i test/sandbox/keys/authorized_keys.test master@127.0.0.1
 ```
 
 ## Notes

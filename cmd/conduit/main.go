@@ -13,14 +13,15 @@ import (
 	"strings"
 	"syscall"
 
+	conduit "github.com/leofds/conduit"
 	"github.com/leofds/conduit/internal/config"
-	"github.com/leofds/conduit/internal/knownhosts"
-	"github.com/leofds/conduit/internal/resolver"
-	"github.com/leofds/conduit/internal/resolver/apiresolver"
-	"github.com/leofds/conduit/internal/resolver/fileresolver"
-	"github.com/leofds/conduit/internal/server"
-	"github.com/leofds/conduit/internal/session"
+	iserver "github.com/leofds/conduit/internal/server"
 	"github.com/leofds/conduit/internal/version"
+	"github.com/leofds/conduit/knownhosts"
+	"github.com/leofds/conduit/resolver"
+	"github.com/leofds/conduit/resolver/apiresolver"
+	"github.com/leofds/conduit/resolver/fileresolver"
+	"github.com/leofds/conduit/session"
 )
 
 //go:embed defaults/conduit.yaml defaults/hosts.yaml
@@ -99,6 +100,30 @@ func parseFlags(args []string) (resetKnownHost string, writeDefaultFiles bool, r
 	return reset, writeDefaults, fs.Args(), nil
 }
 
+// buildResolver selects the resolver backend from the loaded configuration.
+func buildResolver(cfg *config.Config) (resolver.Resolver, *fileresolver.Resolver, error) {
+	switch cfg.Resolver {
+	case config.ResolverAPI:
+		r, err := apiresolver.New(apiresolver.Config{
+			URL:             cfg.API.URL,
+			ConnectTimeout:  cfg.API.ConnectTimeout,
+			ResponseTimeout: cfg.API.ResponseTimeout,
+		})
+		if err != nil {
+			return nil, nil, fmt.Errorf("API resolver: %w", err)
+		}
+		log.Printf("Resolver: api → %s", cfg.API.URL)
+		return r, nil, nil
+	default: // ResolverFile
+		fr, err := fileresolver.New(cfg.Local)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to load host config: %w", err)
+		}
+		log.Printf("Resolver: file")
+		return fr, fr, nil
+	}
+}
+
 func main() {
 	resetKnownHost, writeDefaultFiles, remainingArgs, err := parseFlags(os.Args[1:])
 	if err != nil {
@@ -138,43 +163,56 @@ func main() {
 		log.Fatalf("unexpected arguments: %v", remainingArgs)
 	}
 
-	var r resolver.Resolver
-	switch cfg.Resolver {
-	case config.ResolverAPI:
-		r, err = apiresolver.New(apiresolver.Config{
-			URL:             cfg.API.URL,
-			ConnectTimeout:  cfg.API.ConnectTimeout,
-			ResponseTimeout: cfg.API.ResponseTimeout,
-		})
-		if err != nil {
-			log.Fatalf("API resolver: %v", err)
-		}
-		log.Printf("Resolver: api → %s", cfg.API.URL)
-	default: // ResolverFile
-		fr, err := fileresolver.New(cfg.Local)
-		if err != nil {
-			log.Fatalf("Failed to load host config: %v", err)
-		}
-		r = fr
-		log.Printf("Resolver: file")
+	r, fileResolver, err := buildResolver(cfg)
+	if err != nil {
+		log.Fatalf("%v", err)
 	}
-
-	sessMan := session.NewManager()
-
-	srv := server.New(r, cfg.Server, cfg.Headers, sessMan)
-	srv.SetDebugBanner(cfg.DebugBanner)
-	srv.SetAllowLocal(cfg.AllowLocalShell)
-	srv.SetLocalConfig(cfg.Local)
-	srv.SetDemo(cfg.Demo)
-	srv.SetSSHConfig(cfg.SSH)
-	srv.SetTerminalOptions(cfg.TerminalOptions)
-	srv.SetAllowedOrigins(cfg.AllowedOrigins)
 
 	ks, err := knownhosts.New(cfg.SSH.KnownHostsFile)
 	if err != nil {
 		log.Fatalf("Known hosts: %v", err)
 	}
-	srv.SetKnownHosts(ks)
+
+	sessMan := session.NewManager()
+
+	srv, err := conduit.New(conduit.Options{
+		Resolver:        r,
+		KnownHosts:      ks,
+		SessionManager:  sessMan,
+		AllowLocal:      cfg.AllowLocalShell,
+		Demo:            cfg.Demo,
+		DebugBanner:     cfg.DebugBanner,
+		AllowedOrigins:  cfg.AllowedOrigins,
+		HTTPHeaders:     cfg.Headers,
+		TerminalOptions: cfg.TerminalOptions,
+		SSH: conduit.SSHOptions{
+			Port:              cfg.SSH.Port,
+			Term:              cfg.SSH.Term,
+			IdleTimeout:       cfg.SSH.IdleTimeout,
+			KeepaliveInterval: cfg.SSH.KeepaliveInterval,
+			DialTimeout:       cfg.SSH.DialTimeout,
+			VerifyHostKey:     cfg.SSH.VerifyHostKey,
+			AutoAcceptHostKey: cfg.SSH.AutoAcceptHostKey,
+			Env:               cfg.SSH.Env,
+		},
+		Local: conduit.LocalOptions{
+			Command:     cfg.Local.Command,
+			Term:        cfg.Local.Term,
+			WorkingDir:  cfg.Local.WorkingDir,
+			IdleTimeout: cfg.Local.IdleTimeout,
+			Env:         cfg.Local.Env,
+		},
+		Timeouts: conduit.Timeouts{
+			Read:        cfg.Server.Timeouts.Read,
+			Write:       cfg.Server.Timeouts.Write,
+			ReadHeader:  cfg.Server.Timeouts.ReadHeader,
+			Idle:        cfg.Server.Timeouts.Idle,
+			WSHandshake: cfg.Server.Timeouts.WSHandshake,
+		},
+	})
+	if err != nil {
+		log.Fatalf("Failed to create server: %v", err)
+	}
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	go func() {
@@ -184,7 +222,7 @@ func main() {
 		}
 	}()
 
-	control, err := server.NewControlServer(cfg.ControlSocket, sessMan)
+	control, err := iserver.NewControlServer(cfg.ControlSocket, sessMan)
 	if err != nil {
 		log.Fatalf("Failed to create control server: %v", err)
 	}
@@ -198,8 +236,8 @@ func main() {
 	signal.Notify(sighup, syscall.SIGHUP)
 	go func() {
 		for range sighup {
-			if fr, ok := r.(*fileresolver.Resolver); ok {
-				if err := fr.Reload(); err != nil {
+			if fileResolver != nil {
+				if err := fileResolver.Reload(); err != nil {
 					log.Printf("error reloading hosts: %v", err)
 				} else {
 					log.Printf("hosts reloaded successfully")
@@ -215,13 +253,13 @@ func main() {
 	<-quit
 
 	log.Println("Shutting down...")
-	err_srv := srv.Shutdown()
-	err_control_srv := control.StopUnixSocket()
-	if err_srv != nil {
-		log.Fatalf("Shutdown error: %v", err_srv)
+	errSrv := srv.Shutdown()
+	errControlSrv := control.StopUnixSocket()
+	if errSrv != nil {
+		log.Fatalf("Shutdown error: %v", errSrv)
 	}
-	if err_control_srv != nil {
-		log.Fatalf("Control server shutdown error: %v", err_control_srv)
+	if errControlSrv != nil {
+		log.Fatalf("Control server shutdown error: %v", errControlSrv)
 	}
 	log.Println("Stopped")
 }

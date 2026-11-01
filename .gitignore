@@ -22,5 +22,5 @@ _dev/
 /conduit.yaml
 /hosts.yaml
 
-# Test SSH server key material
-test/sshserver/keys/*
+# SSH sandbox key material
+test/sandbox/keys/*
