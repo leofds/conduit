@@ -1,9 +1,5 @@
 # TODO
 
-## Project structure
-
-- **Project as a module** - Update the project to be used as a module by other golang applicarions.
-
 ## SSH
 
 - **Passphrase-protected private keys** — `gossh.ParsePrivateKey` fails on encrypted keys. Use

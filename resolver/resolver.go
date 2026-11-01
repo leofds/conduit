@@ -22,6 +22,11 @@ type SSHConfig struct {
 	VerifyHostKey     *bool
 	IdleTimeout       *time.Duration
 	KeepaliveInterval *time.Duration
+
+	// KnownFingerprint, when set, is the expected SHA256 host key fingerprint for
+	// this host. It takes precedence over any configured known-hosts Provider, and
+	// the value is never persisted to the Provider (no Trust On First Use occurs).
+	KnownFingerprint string
 }
 
 func (SSHConfig) isSessionConfig() {}

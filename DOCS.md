@@ -439,6 +439,7 @@ hosts:
 | `auto_accept_host_key` | bool | no | `ssh.auto_accept_host_key` | Auto-accept fingerprint override |
 | `idle_timeout` | duration | no | `ssh.idle_timeout` | Idle timeout override |
 | `keepalive_interval` | duration | no | `ssh.keepalive_interval` | Keepalive interval override |
+| `known_fingerprint` | string | no | `""` | Expected SHA256 host key fingerprint. When set, it takes precedence over the known-hosts store and is never persisted |
 | `env` | map\[string\]string | no | `ssh.env` | Env vars merged with `ssh.env`; host values override |
 
 ---
@@ -467,13 +468,14 @@ Response:
   "auto_accept_host_key": false,
   "idle_timeout": "10m",
   "keepalive_interval": "30s",
+  "known_fingerprint": "",
   "env": {
     "LANG": "en_US.UTF-8"
   }
 }
 ```
 
-All fields except `address` and `username` are optional — omit any to fall back to the global setting in `conduit.yaml`.
+All fields except `address` and `username` are optional — omit any to fall back to the global setting in `conduit.yaml`. When `known_fingerprint` is set, it takes precedence over the known-hosts store and is never persisted.
 
 ### Local endpoint — `POST <url>/local`
 
@@ -495,3 +497,4 @@ Response:
 `term`, `working_dir`, `idle_timeout`, and `env` are optional — omit any to fall back to the corresponding `local.*` setting in `conduit.yaml`. Local shell sessions also inherit any `local.env` values.
 
 The full contract is described in the OpenAPI specification at [`api/openapi.yaml`](../api/openapi.yaml).
+

@@ -6,9 +6,9 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/leofds/conduit/internal/config"
-	"github.com/leofds/conduit/internal/session/local"
-	"github.com/leofds/conduit/internal/session/ssh"
 	"github.com/leofds/conduit/internal/version"
+	"github.com/leofds/conduit/session/local"
+	"github.com/leofds/conduit/session/ssh"
 )
 
 func (s *Server) writeDebugBanner(wsConn *websocket.Conn, host string, cfg any, cols uint16) {

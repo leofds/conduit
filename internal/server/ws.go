@@ -10,13 +10,13 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/leofds/conduit/internal/config"
-	"github.com/leofds/conduit/internal/resolver"
-	"github.com/leofds/conduit/internal/session"
-	sessionlocal "github.com/leofds/conduit/internal/session/local"
-	sessionssh "github.com/leofds/conduit/internal/session/ssh"
+	"github.com/leofds/conduit/resolver"
+	"github.com/leofds/conduit/session"
+	sessionlocal "github.com/leofds/conduit/session/local"
+	sessionssh "github.com/leofds/conduit/session/ssh"
 )
 
-// tokenFromCookie returns the value of the conduit_auth cookie, or empty string if absent.
+// tokenFromCookie returns the value of the conduit_session cookie, or empty string if absent.
 func tokenFromCookie(c *gin.Context) string {
 	token, _ := c.Cookie("conduit_session")
 	return token
@@ -48,8 +48,14 @@ func extractBearerToken(authHeader string) string {
 // wsHandler upgrades the connection to WebSocket and dispatches to the appropriate session runner.
 // Session configuration (method, credentials, host, port, shell) is resolved via s.resolver.
 func (s *Server) wsHandler(c *gin.Context) {
-	host := c.Param("host")
-	token := tokenFromRequest(c)
+	// E1: compute the resolver request via the embedder's mapper when set.
+	var req resolver.Request
+	if s.requestMapper != nil {
+		req = s.requestMapper(c.Request)
+	} else {
+		req = resolver.Request{Host: c.Param("host"), Token: tokenFromRequest(c)}
+	}
+	host := req.Host
 
 	cols := clampCols(parseUint16(c.Query("cols"), 80))
 	rows := clampRows(parseUint16(c.Query("rows"), 24))
@@ -60,15 +66,15 @@ func (s *Server) wsHandler(c *gin.Context) {
 		return
 	}
 
-	cfg, err := s.resolver.Resolve(resolver.Request{Host: host, Token: token})
+	cfg, err := s.resolver.Resolve(req)
 	if err != nil {
 		log.Printf("resolver error host=%q: %v", host, err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Clear the token cookie now that it has been consumed.
-	if token != "" {
+	// E2: clear the token cookie only when the request actually carried it.
+	if _, err := c.Request.Cookie("conduit_session"); err == nil {
 		http.SetCookie(c.Writer, &http.Cookie{
 			Name:     "conduit_session",
 			Value:    "",
@@ -106,7 +112,7 @@ func (s *Server) wsHandler(c *gin.Context) {
 	}
 
 	upgrader := websocket.Upgrader{
-		HandshakeTimeout: s.serverConfig.Timeouts.WSHandshake,
+		HandshakeTimeout: s.timeouts.WSHandshake,
 		CheckOrigin: func(r *http.Request) bool {
 			if len(s.allowedOrigins) == 0 {
 				return true
@@ -198,9 +204,11 @@ func (s *Server) buildSSHRunner(host string, sess resolver.SSHConfig, cols, rows
 		sshEnv[k] = v
 	}
 	sess.Env = sshEnv
-	knownFP := ""
+
+	// D3: resolver-supplied fingerprint takes precedence over the known-hosts store.
+	knownFP := sess.KnownFingerprint
 	var saveHostKey func(string) error
-	if verifyHostKey && s.knownHosts != nil {
+	if verifyHostKey && knownFP == "" {
 		knownFP = s.knownHosts.Get(host)
 		saveHostKey = func(fp string) error { return s.knownHosts.Set(host, fp) }
 	}

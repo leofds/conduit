@@ -171,6 +171,13 @@ components:
             (e.g. `"30s"`, `"1m"`).  Omit to fall back to the global
             `keepalive_interval` setting in conduit.yaml.
           example: "30s"
+        known_fingerprint:
+          type: string
+          description: |
+            Expected SHA256 host key fingerprint for this host.  When set, it
+            takes precedence over the known-hosts store and the value is never
+            persisted (no Trust On First Use occurs).  Omit to use TOFU.
+          example: "SHA256:abc123..."
 
     LocalResponse:
       type: object

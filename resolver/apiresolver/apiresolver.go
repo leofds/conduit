@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/leofds/conduit/internal/config"
-	"github.com/leofds/conduit/internal/resolver"
+	"github.com/leofds/conduit/resolver"
 )
 
 // Config holds the connection parameters for the API resolver.
@@ -76,6 +76,7 @@ type SSHResponseBody struct {
 	KeepaliveInterval string            `json:"keepalive_interval,omitempty"`
 	AutoAcceptHostKey *bool             `json:"auto_accept_host_key,omitempty"`
 	VerifyHostKey     *bool             `json:"verify_host_key,omitempty"`
+	KnownFingerprint  string            `json:"known_fingerprint,omitempty"`
 }
 
 // LocalResponseBody is the JSON payload returned by the /local endpoint.
@@ -187,5 +188,6 @@ func (r *Resolver) Resolve(req resolver.Request) (resolver.SessionConfig, error)
 		VerifyHostKey:     result.VerifyHostKey,
 		IdleTimeout:       idleTimeout,
 		KeepaliveInterval: keepaliveInterval,
+		KnownFingerprint:  result.KnownFingerprint,
 	}, nil
 }

@@ -23,6 +23,28 @@ This project is intended to be embedded into your application as an internal ser
 - **OpenAPI spec** - machine-readable contract for the API resolver at [`api/openapi.yaml`](api/openapi.yaml)
 - **Session management** - Unix socket control interface for managing active sessions
 
+## Embedding Conduit in your Go application
+
+Conduit is designed to be used as a Go module inside your own service. Instead of
+running the `conduit` binary, you import `github.com/leofds/conduit`, provide a
+`resolver.Resolver` (your own auth + host lookup) and a host-key store, and let
+Conduit serve the terminal UI and WebSocket for you.
+
+Runnable examples live in [`examples/`](examples):
+
+- **[`examples/server`](examples/server/main.go)** — runs Conduit's own HTTP
+  server, started explicitly and shut down gracefully on `SIGINT`/`SIGTERM`
+  (mirrors how `cmd/conduit/main.go` wires things up). Uses a custom in-memory
+  resolver and a file-backed known-hosts store.
+- **[`examples/embed`](examples/embed/main.go)** — mounts Conduit's `Handler()`
+  on your own `http.ServeMux`, with a custom in-memory resolver and the in-memory
+  known-hosts store.
+
+```bash
+go run ./examples/server   # http://localhost:9090/demo
+go run ./examples/embed    # http://localhost:9090/demo
+```
+
 ## Getting Started
 
 1\. Build and Run the project by running:

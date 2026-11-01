@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/leofds/conduit/internal/session"
+	"github.com/leofds/conduit/session"
 )
 
 type ControlServer struct {
@@ -104,7 +104,7 @@ func (c *ControlServer) handleControlConn(conn net.Conn) {
 
 	case line == "close-all":
 		count := c.sessionManager.CancelAll()
-		_, _ =fmt.Fprintf(conn, "cancelled %d sessions\n", count)
+		_, _ = fmt.Fprintf(conn, "cancelled %d sessions\n", count)
 
 	case strings.HasPrefix(line, "close "):
 		id := strings.TrimSpace(strings.TrimPrefix(line, "close "))

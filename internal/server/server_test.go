@@ -10,8 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/leofds/conduit/internal/config"
-	"github.com/leofds/conduit/internal/resolver"
+	"github.com/leofds/conduit/resolver"
 )
 
 // stubResolver is a minimal Resolver that always returns "not found".
@@ -22,8 +21,26 @@ func (stubResolver) Resolve(_ resolver.Request) (resolver.SessionConfig, error) 
 }
 
 func newTestServer() *Server {
-	serverConfig := config.ServerConfig{Timeouts: config.HTTPServerTimeouts{Read: 10 * time.Second, Write: 0, ReadHeader: 10 * time.Second, Idle: 120 * time.Second}}
-	return New(stubResolver{}, serverConfig, nil, nil)
+	opts := Options{
+		Resolver: stubResolver{},
+		Demo:     true,
+		Timeouts: Timeouts{
+			Read:        10 * time.Second,
+			Write:       0,
+			ReadHeader:  10 * time.Second,
+			Idle:        120 * time.Second,
+			WSHandshake: 10 * time.Second,
+		},
+		SSH: SSHOptions{
+			Port: "22",
+			Term: "xterm-256color",
+		},
+		Local: LocalOptions{
+			Command: "/bin/bash",
+			Term:    "xterm-256color",
+		},
+	}
+	return New(opts)
 }
 
 func TestHealthEndpoint(t *testing.T) {
