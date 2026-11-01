@@ -7,14 +7,14 @@ CMD            := ./cmd/conduit
 CMD_CTL		   := ./cmd/conduitctl
 CMD_MOCKAPI    := ./cmd/mockapi
 
-SSH_TEST_COMPOSE := test/sshserver/docker-compose.test.yml
-SSH_TEST_KEYS    := test/sshserver/keys
+SSH_TEST_COMPOSE := test/sandbox/docker-compose.test.yml
+SSH_TEST_KEYS    := test/sandbox/keys
 SSH_TEST_KEY     := $(SSH_TEST_KEYS)/authorized_keys.test
 
 VERSION       := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS       := -ldflags "-X github.com/leofds/conduit/internal/version.Version=$(VERSION)"
 
-.PHONY: build-ctl build run run-mockapi test test-integration lint clean release vendor-xterm sshserver-keys sshserver-up sshserver-down sshserver-shell
+.PHONY: build-ctl build run run-mockapi run-sandbox-example test test-integration lint clean release vendor-xterm sandbox-keys sandbox-up sandbox-down sandbox-shell
 
 build-ctl:
 	mkdir -p dist
@@ -49,38 +49,43 @@ run: build
 run-mockapi: build-mockapi
 	./$(BINARY_MOCKAPI)
 
+# Run the sandbox example (embeds Conduit and connects to the SSH sandbox in
+# test/sandbox on 127.0.0.1:2222). Start it first with `make sandbox-up`.
+run-sandbox-example:
+	go run ./examples/sandbox
+
 test:
 	go test ./...
 
 # Generate the test SSH keypair on the host (git-ignored). The public key is
 # mounted into the container and installed as authorized_keys; the private key
 # stays on the host so integration tests can authenticate with it.
-sshserver-keys:
+sandbox-keys:
 	@mkdir -p $(SSH_TEST_KEYS)
 	@if [ -f "$(SSH_TEST_KEY)" ]; then \
 		echo "Key already exists: $(SSH_TEST_KEY) (delete it to regenerate)"; \
 	else \
-		ssh-keygen -t ed25519 -N '' -C conduit-sshtest -f "$(SSH_TEST_KEY)" -q; \
+		ssh-keygen -t ed25519 -N '' -C conduit-sandbox -f "$(SSH_TEST_KEY)" -q; \
 		echo "Generated $(SSH_TEST_KEY) and $(SSH_TEST_KEY).pub"; \
 	fi
 
-# Start/stop the containerized test SSH server (see test/sshserver/README.md).
-sshserver-up: sshserver-keys
+# Start/stop the containerized test SSH server (see test/sandbox/README.md).
+sandbox-up: sandbox-keys
 	docker compose -f $(SSH_TEST_COMPOSE) up -d --build
 
-sshserver-down:
+sandbox-down:
 	docker compose -f $(SSH_TEST_COMPOSE) down
 
 # Open a shell inside the running test SSH server container, as the master user.
 # -it allocates a TTY so the interactive shell stays attached; -l makes it a
 # login shell so /etc/profile.d/prompt.sh (which sets the PS1) is sourced.
 # The command changes into $HOME so the prompt shows ~ instead of /.
-sshserver-shell:
-	@docker compose -f $(SSH_TEST_COMPOSE) exec -it -u master sshserver /bin/sh -lc 'cd "$$HOME"; exec /bin/sh'
+sandbox-shell:
+	@docker compose -f $(SSH_TEST_COMPOSE) exec -it -u master sandbox /bin/sh -lc 'cd "$$HOME"; exec /bin/sh'
 
 # Run integration tests against the containerized SSH server.
 # Requires Docker; tests tagged "integration" are skipped when it is unavailable.
-test-integration: sshserver-up
+test-integration: sandbox-up
 	CONDUIT_SSH_TEST_ADDR=127.0.0.1:2222 \
 	CONDUIT_SSH_TEST_KEY=$(CURDIR)/$(SSH_TEST_KEY) \
 	go test -tags integration ./...; \

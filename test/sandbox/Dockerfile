@@ -5,10 +5,10 @@
 #   - guest   : limited account, no sudo, regular permissions
 #
 # Build:
-#   docker build -t conduit-sshtest test/sshserver
+#   docker build -t conduit-sandbox test/sandbox
 #
 # Run (host port 2222 -> container 22):
-#   docker run -d --rm --name conduit-sshtest -p 2222:22 conduit-sshtest
+#   docker run -d --rm --name conduit-sandbox -p 2222:22 conduit-sandbox
 #
 FROM alpine:3.20
 
